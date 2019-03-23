@@ -147,12 +147,14 @@ bool Voxelizer::createPipelineLayouts()
 
 	// Local pipeline layout for RayGen shader
 	// This is a pipeline layout that enables a shader to have unique arguments that come from shader tables.
+#if 0
 	{
 		RayTracing::PipelineLayout pipelineLayout;
 		pipelineLayout.SetConstants(0, SizeOfInUint32(XMFLOAT4), 0);
 		X_RETURN(m_pipelineLayouts[RAY_GEN_LAYOUT], pipelineLayout.GetPipelineLayout(m_device, m_pipelineLayoutCache,
 			D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE, NumUAVs, L"RayTracerRayGenPipelineLayout"), false);
 	}
+#endif
 
 	{
 		// Get pipeline layout

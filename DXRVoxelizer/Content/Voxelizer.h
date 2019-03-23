@@ -26,7 +26,7 @@ protected:
 	enum PipelineLayoutIndex : uint8_t
 	{
 		GLOBAL_LAYOUT,
-		RAY_GEN_LAYOUT,
+		//RAY_GEN_LAYOUT,
 		RAY_CAST_LAYOUT,
 
 		NUM_PIPELINE_LAYOUT
