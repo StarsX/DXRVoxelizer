@@ -5,6 +5,8 @@ Real-time solid voxelization using DXR ray-tracing pipeline and shaders directly
 
 ![Solid voxelization result](https://github.com/StarsX/DXRVoxelizer/blob/master/Doc/Images/SolidVoxelization.jpg "Voxelization result")
 
+![Hi-resolution exsample](https://github.com/StarsX/DXRVoxelizer/blob/master/Doc/Images/VoxelizationHiRes.jpg "Hi-resolution exsample (not default)")
+
 Hot keys:
 
 [F1] show/hide FPS
