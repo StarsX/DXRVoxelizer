@@ -35,11 +35,7 @@ static const min16float g_lightStepScale = g_maxDist / NUM_LIGHT_SAMPLES;
 //--------------------------------------------------------------------------------------
 // Textures
 //--------------------------------------------------------------------------------------
-#if	USE_MUTEX
-Texture3D<float>	g_txGrid;
-#else
 Texture3D			g_txGrid;
-#endif
 
 //--------------------------------------------------------------------------------------
 // Unordered access textures
@@ -54,53 +50,53 @@ SamplerState		g_smpLinear;
 //--------------------------------------------------------------------------------------
 // Screen space to loacal space
 //--------------------------------------------------------------------------------------
-float3 ScreenToLocal(float3 vLoc)
+float3 ScreenToLocal(float3 screenPos)
 {
-	float4 vPos = mul(float4(vLoc, 1.0), g_screenToLocal);
+	float4 pos = mul(float4(screenPos, 1.0), g_screenToLocal);
 	
-	return vPos.xyz / vPos.w;
+	return pos.xyz / pos.w;
 }
 
 //--------------------------------------------------------------------------------------
 // Compute start point of the ray
 //--------------------------------------------------------------------------------------
-bool ComputeStartPoint(inout float3 vPos, float3 vRayDir)
+bool ComputeStartPoint(inout float3 pos, float3 rayDir)
 {
-	if (abs(vPos.x) <= 1.0 && abs(vPos.y) <= 1.0 && abs(vPos.z) <= 1.0) return true;
+	if (abs(pos.x) <= 1.0 && abs(pos.y) <= 1.0 && abs(pos.z) <= 1.0) return true;
 
 	//float U = asfloat(0x7f800000);	// INF
 	float U = 3.402823466e+38;			// FLT_MAX
-	bool bHit = false;
+	bool isHit = false;
 
 	[unroll]
 	for (uint i = 0; i < 3; ++i)
 	{
-		const float u = (-sign(vRayDir[i]) - vPos[i]) / vRayDir[i];
+		const float u = (-sign(rayDir[i]) - pos[i]) / rayDir[i];
 		if (u < 0.0h) continue;
 
 		const uint j = (i + 1) % 3, k = (i + 2) % 3;
-		if (abs(vRayDir[j] * u + vPos[j]) > 1.0h) continue;
-		if (abs(vRayDir[k] * u + vPos[k]) > 1.0h) continue;
+		if (abs(rayDir[j] * u + pos[j]) > 1.0) continue;
+		if (abs(rayDir[k] * u + pos[k]) > 1.0) continue;
 		if (u < U)
 		{
 			U = u;
-			bHit = true;
+			isHit = true;
 		}
 	}
 
-	vPos = clamp(vRayDir * U + vPos, -1.0, 1.0);
+	pos = clamp(rayDir * U + pos, -1.0, 1.0);
 
-	return bHit;
+	return isHit;
 }
 
 //--------------------------------------------------------------------------------------
 // Sample density field
 //--------------------------------------------------------------------------------------
-min16float GetSample(float3 vTex)
+min16float GetSample(float3 tex)
 {
-	const min16float fDens = min16float(g_txGrid.SampleLevel(g_smpLinear, vTex, 0).w);
+	const min16float density = min16float(g_txGrid.SampleLevel(g_smpLinear, tex, 0).w);
 
-	return min(fDens * 8.0, 16.0);
+	return min(density * 8.0, 16.0);
 }
 
 //--------------------------------------------------------------------------------------

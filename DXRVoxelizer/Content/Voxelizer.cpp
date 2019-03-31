@@ -38,7 +38,7 @@ Voxelizer::~Voxelizer()
 }
 
 bool Voxelizer::Init(uint32_t width, uint32_t height, Format rtFormat, Format dsFormat,
-	Resource &vbUpload, Resource &ibUpload, RayTracing::Geometry &geometry, const char *fileName)
+	Resource &vbUpload, Resource &ibUpload, Geometry &geometry, const char *fileName)
 {
 	m_viewport.x = static_cast<float>(width);
 	m_viewport.y = static_cast<float>(height);
@@ -200,6 +200,7 @@ bool Voxelizer::createPipelines(Format rtFormat, Format dsFormat)
 		state.SetShader(Shader::Stage::VS, m_shaderPool.GetShader(Shader::Stage::VS, VS_SCREEN_QUAD));
 		state.SetShader(Shader::Stage::PS, m_shaderPool.GetShader(Shader::Stage::PS, PS_RAY_CAST));
 		state.IASetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+		state.DSSetState(Graphics::DepthStencilPreset::DEPTH_STENCIL_NONE, m_graphicsPipelineCache);
 		state.OMSetBlendState(Graphics::BlendPreset::NON_PRE_MUL, m_graphicsPipelineCache);
 		state.OMSetRTVFormats(&rtFormat, 1);
 		X_RETURN(m_pipeline, state.GetPipeline(m_graphicsPipelineCache, L"RayCast"), false);
@@ -269,7 +270,7 @@ bool Voxelizer::createDescriptorTables()
 	return true;
 }
 
-bool Voxelizer::buildAccelerationStructures(RayTracing::Geometry *geometries)
+bool Voxelizer::buildAccelerationStructures(Geometry *geometries)
 {
 	AccelerationStructure::SetFrameCount(FrameCount);
 
