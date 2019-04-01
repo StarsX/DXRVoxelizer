@@ -2,6 +2,8 @@
 // By XU, Tianchen
 //--------------------------------------------------------------------------------------
 
+#include "SharedConst.h"
+
 #define NUM_SAMPLES			128
 #define NUM_LIGHT_SAMPLES	32
 #define ABSORPTION			1.0
@@ -32,10 +34,16 @@ static const min16float g_maxDist = 2.0 * sqrt(3.0);
 static const min16float g_stepScale = g_maxDist / NUM_SAMPLES;
 static const min16float g_lightStepScale = g_maxDist / NUM_LIGHT_SAMPLES;
 
+static const min16float3 g_clearColor = min16float3(CLEAR_COLOR);
+
 //--------------------------------------------------------------------------------------
 // Textures
 //--------------------------------------------------------------------------------------
+#if	USE_MUTEX
+Texture3D<float>	g_txGrid;
+#else
 Texture3D			g_txGrid;
+#endif
 
 //--------------------------------------------------------------------------------------
 // Unordered access textures
@@ -94,7 +102,11 @@ bool ComputeStartPoint(inout float3 pos, float3 rayDir)
 //--------------------------------------------------------------------------------------
 min16float GetSample(float3 tex)
 {
-	const min16float density = min16float(g_txGrid.SampleLevel(g_smpLinear, tex, 0).w);
+#if	USE_MUTEX
+	const min16float density = min16float(g_txGrid.SampleLevel(g_smpLinear, tex, SHOW_MIP).x);
+#else
+	const min16float density = min16float(g_txGrid.SampleLevel(g_smpLinear, tex, SHOW_MIP).w);
+#endif
 
 	return min(density * 8.0, 16.0);
 }
@@ -106,7 +118,7 @@ min16float4 main(float4 sspos : SV_POSITION) : SV_TARGET
 {
 	float3 pos = ScreenToLocal(float3(sspos.xy, 0.0));	// The point on the near plane
 	const float3 rayDir = normalize(pos - g_localSpaceEyePt);
-	if (!ComputeStartPoint(pos, rayDir)) discard;
+	if (!ComputeStartPoint(pos, rayDir)) return min16float4(g_clearColor, 0.0);
 
 	const float3 step = rayDir * g_stepScale;
 
@@ -168,7 +180,8 @@ min16float4 main(float4 sspos : SV_POSITION) : SV_TARGET
 
 	//clip(ONE_THRESHOLD - transmit);
 
-	const min16float3 result = scatter * 1.0 + 0.3;
+	min16float3 result = scatter * 0.8 + 0.2;
+	result = lerp(result, g_clearColor * g_clearColor, transmit);
 	
-	return min16float4(sqrt(result), 1.0 - transmit);
+	return min16float4(sqrt(result), 1.0);
 }

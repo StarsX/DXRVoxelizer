@@ -29,7 +29,7 @@ DXRVoxelizer::DXRVoxelizer(uint32_t width, uint32_t height, std::wstring name) :
 	m_frameIndex(0),
 	m_viewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height)),
 	m_scissorRect(0, 0, static_cast<long>(width), static_cast<long>(height)),
-	m_showFPS(false),
+	m_showFPS(true),
 	m_pausing(false),
 	m_tracking(false),
 	m_meshFileName("Media/bunny.obj"),
@@ -358,8 +358,8 @@ void DXRVoxelizer::PopulateCommandList()
 	m_renderTargets[m_frameIndex].Barrier(m_commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 	// Record commands.
-	const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
-	m_commandList.ClearRenderTargetView(*m_rtvTables[m_frameIndex], clearColor);
+	//const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
+	//m_commandList.ClearRenderTargetView(*m_rtvTables[m_frameIndex], clearColor);
 	m_commandList.ClearDepthStencilView(m_depth.GetDSV(), D3D12_CLEAR_FLAG_DEPTH, 1.0f);
 
 	// Voxelizer rendering

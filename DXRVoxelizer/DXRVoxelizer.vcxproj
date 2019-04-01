@@ -177,6 +177,7 @@ PostbuildCopy.bat "$(ProjectDir)..\Bin\"</Command>
     <ClInclude Include="Common\StepTimer.h" />
     <ClInclude Include="Common\Win32Application.h" />
     <ClInclude Include="Content\ObjLoader.h" />
+    <ClInclude Include="Content\SharedConst.h" />
     <ClInclude Include="Content\Voxelizer.h" />
     <ClInclude Include="DXRVoxelizer.h" />
     <ClInclude Include="stdafx.h" />
