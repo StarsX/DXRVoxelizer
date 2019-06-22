@@ -19,9 +19,8 @@ const wchar_t *Voxelizer::RaygenShaderName = L"raygenMain";
 const wchar_t *Voxelizer::ClosestHitShaderName = L"closestHitMain";
 const wchar_t *Voxelizer::MissShaderName = L"missMain";
 
-Voxelizer::Voxelizer(const RayTracing::Device &device, const RayTracing::CommandList &commandList) :
+Voxelizer::Voxelizer(const RayTracing::Device &device) :
 	m_device(device),
-	m_commandList(commandList),
 	m_instances()
 {
 	m_rayTracingPipelineCache.SetDevice(device);
@@ -37,8 +36,8 @@ Voxelizer::~Voxelizer()
 {
 }
 
-bool Voxelizer::Init(uint32_t width, uint32_t height, Format rtFormat, Format dsFormat,
-	Resource &vbUpload, Resource &ibUpload, Geometry &geometry, const char *fileName)
+bool Voxelizer::Init(const RayTracing::CommandList &commandList, uint32_t width, uint32_t height,
+	Format rtFormat, Format dsFormat, vector<Resource> &uploaders, Geometry &geometry, const char *fileName)
 {
 	m_viewport.x = static_cast<float>(width);
 	m_viewport.y = static_cast<float>(height);
@@ -46,8 +45,8 @@ bool Voxelizer::Init(uint32_t width, uint32_t height, Format rtFormat, Format ds
 	// Load inputs
 	ObjLoader objLoader;
 	if (!objLoader.Import(fileName, true, true)) return false;
-	N_RETURN(createVB(objLoader.GetNumVertices(), objLoader.GetVertexStride(), objLoader.GetVertices(), vbUpload), false);
-	N_RETURN(createIB(objLoader.GetNumIndices(), objLoader.GetIndices(), ibUpload), false);
+	N_RETURN(createVB(commandList, objLoader.GetNumVertices(), objLoader.GetVertexStride(), objLoader.GetVertices(), uploaders), false);
+	N_RETURN(createIB(commandList, objLoader.GetNumIndices(), objLoader.GetIndices(), uploaders), false);
 
 	// Create raytracing pipelines
 	N_RETURN(createPipelineLayouts(), false);
@@ -64,7 +63,7 @@ bool Voxelizer::Init(uint32_t width, uint32_t height, Format rtFormat, Format ds
 		N_RETURN(grid.Create(m_device.Common, GRID_SIZE, GRID_SIZE, GRID_SIZE, DXGI_FORMAT_R10G10B10A2_UNORM,
 			D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS), false);
 	//m_depth.Create(m_device.Common, width, height, DXGI_FORMAT_D24_UNORM_S8_UINT, D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE);
-	N_RETURN(buildAccelerationStructures(&geometry), false);
+	N_RETURN(buildAccelerationStructures(commandList, &geometry), false);
 	N_RETURN(buildShaderTables(), false);
 
 	return true;
@@ -95,34 +94,40 @@ void Voxelizer::UpdateFrame(uint32_t frameIndex, CXMVECTOR eyePt, CXMMATRIX view
 	pCbPerObject->screenToLocal = XMMatrixTranspose(screenToLocal);
 }
 
-void Voxelizer::Render(uint32_t frameIndex, const RenderTargetTable &rtvs, const Descriptor &dsv)
+void Voxelizer::Render(const RayTracing::CommandList &commandList, uint32_t frameIndex,
+	const RenderTargetTable &rtvs, const Descriptor &dsv)
 {
 	const DescriptorPool descriptorPools[] =
 	{
 		m_descriptorTableCache.GetDescriptorPool(CBV_SRV_UAV_POOL),
 		m_descriptorTableCache.GetDescriptorPool(SAMPLER_POOL)
 	};
-	m_commandList.SetDescriptorPools(static_cast<uint32_t>(size(descriptorPools)), descriptorPools);
+	commandList.SetDescriptorPools(static_cast<uint32_t>(size(descriptorPools)), descriptorPools);
 
-	voxelize(frameIndex);
-	renderRayCast(frameIndex, rtvs, dsv);
+	voxelize(commandList, frameIndex);
+	renderRayCast(commandList, frameIndex, rtvs, dsv);
 }
 
-bool Voxelizer::createVB(uint32_t numVert, uint32_t stride, const uint8_t *pData, Resource &vbUpload)
+bool Voxelizer::createVB(const RayTracing::CommandList &commandList, uint32_t numVert,
+	uint32_t stride, const uint8_t *pData, vector<Resource> &uploaders)
 {
 	N_RETURN(m_vertexBuffer.Create(m_device.Common, numVert, stride, D3D12_RESOURCE_FLAG_NONE,
 		D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COPY_DEST), false);
+	uploaders.push_back(nullptr);
 
-	return m_vertexBuffer.Upload(m_commandList, vbUpload, pData,
+	return m_vertexBuffer.Upload(commandList, uploaders.back(), pData, stride * numVert,
 		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 }
 
-bool Voxelizer::createIB(uint32_t numIndices, const uint32_t *pData, Resource &ibUpload)
+bool Voxelizer::createIB(const RayTracing::CommandList &commandList, uint32_t numIndices,
+	const uint32_t *pData, vector<Resource> &uploaders)
 {
-	N_RETURN(m_indexBuffer.Create(m_device.Common, sizeof(uint32_t) * numIndices, DXGI_FORMAT_R32_UINT,
+	const uint32_t byteWidth = sizeof(uint32_t) * numIndices;
+	N_RETURN(m_indexBuffer.Create(m_device.Common, byteWidth, DXGI_FORMAT_R32_UINT,
 		D3D12_RESOURCE_FLAG_NONE, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COPY_DEST), false);
+	uploaders.push_back(nullptr);
 
-	return m_indexBuffer.Upload(m_commandList, ibUpload, pData,
+	return m_indexBuffer.Upload(commandList, uploaders.back(), pData, byteWidth,
 		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 }
 
@@ -159,8 +164,8 @@ bool Voxelizer::createPipelineLayouts()
 	{
 		// Get pipeline layout
 		Util::PipelineLayout pipelineLayout;
-		pipelineLayout.SetRange(0, DescriptorType::CBV, 1, 0);
-		pipelineLayout.SetRange(1, DescriptorType::SRV, 1, 0);
+		pipelineLayout.SetRange(0, DescriptorType::CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+		pipelineLayout.SetRange(1, DescriptorType::SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
 		pipelineLayout.SetRange(2, DescriptorType::SAMPLER, 1, 0);
 		pipelineLayout.SetShaderStage(0, Shader::Stage::PS);
 		pipelineLayout.SetShaderStage(1, Shader::Stage::PS);
@@ -269,7 +274,7 @@ bool Voxelizer::createDescriptorTables()
 	return true;
 }
 
-bool Voxelizer::buildAccelerationStructures(Geometry *geometries)
+bool Voxelizer::buildAccelerationStructures(const RayTracing::CommandList &commandList, Geometry *geometries)
 {
 	AccelerationStructure::SetFrameCount(FrameCount);
 
@@ -303,10 +308,10 @@ bool Voxelizer::buildAccelerationStructures(Geometry *geometries)
 	TopLevelAS::SetInstances(m_device, m_instances, 1, &m_bottomLevelAS, pTransform);
 
 	// Build bottom level ASs
-	m_bottomLevelAS.Build(m_commandList, m_scratch, descriptorPool, NumUAVs);
+	m_bottomLevelAS.Build(commandList, m_scratch, descriptorPool, NumUAVs);
 
 	// Build top level AS
-	m_topLevelAS.Build(m_commandList, m_scratch, m_instances, descriptorPool, NumUAVs);
+	m_topLevelAS.Build(commandList, m_scratch, m_instances, descriptorPool, NumUAVs);
 
 	return true;
 }
@@ -331,42 +336,51 @@ bool Voxelizer::buildShaderTables()
 	return true;
 }
 
-void Voxelizer::voxelize(uint32_t frameIndex)
+void Voxelizer::voxelize(const RayTracing::CommandList &commandList, uint32_t frameIndex)
 {
+	// Set resource barrier
+	ResourceBarrier barrier;
+	const auto numBarriers = m_grids[frameIndex].SetBarrier(&barrier, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	commandList.Barrier(numBarriers, &barrier);
+
 	// Set descriptor tables
-	m_commandList.SetComputePipelineLayout(m_pipelineLayouts[GLOBAL_LAYOUT]);
-	m_grids[frameIndex].Barrier(m_commandList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	m_commandList.SetComputeDescriptorTable(OUTPUT_GRID, m_uavTables[frameIndex]);
-	m_commandList.SetTopLevelAccelerationStructure(ACCELERATION_STRUCTURE, m_topLevelAS);
-	m_commandList.SetComputeDescriptorTable(INDEX_BUFFERS, m_srvTables[SRV_TABLE_IB]);
-	m_commandList.SetComputeDescriptorTable(VERTEX_BUFFERS, m_srvTables[SRV_TABLE_VB]);
+	commandList.SetComputePipelineLayout(m_pipelineLayouts[GLOBAL_LAYOUT]);
+	commandList.SetComputeDescriptorTable(OUTPUT_GRID, m_uavTables[frameIndex]);
+	commandList.SetTopLevelAccelerationStructure(ACCELERATION_STRUCTURE, m_topLevelAS);
+	commandList.SetComputeDescriptorTable(INDEX_BUFFERS, m_srvTables[SRV_TABLE_IB]);
+	commandList.SetComputeDescriptorTable(VERTEX_BUFFERS, m_srvTables[SRV_TABLE_VB]);
 
 	// Fallback layer has no depth
-	m_commandList.DispatchRays(m_rayTracingPipeline, GRID_SIZE, GRID_SIZE * GRID_SIZE, 1,
+	commandList.DispatchRays(m_rayTracingPipeline, GRID_SIZE, GRID_SIZE * GRID_SIZE, 1,
 		m_hitGroupShaderTable, m_missShaderTable, m_rayGenShaderTable);
 }
 
-void Voxelizer::renderRayCast(uint32_t frameIndex, const RenderTargetTable &rtvs, const Descriptor &dsv)
+void Voxelizer::renderRayCast(const RayTracing::CommandList &commandList, uint32_t frameIndex,
+	const RenderTargetTable &rtvs, const Descriptor &dsv)
 {
+	// Set resource barrier
+	ResourceBarrier barrier;
+	const auto numBarriers = m_grids[frameIndex].SetBarrier(&barrier, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	commandList.Barrier(numBarriers, &barrier);
+
 	// Set descriptor tables
-	m_commandList.SetGraphicsPipelineLayout(m_pipelineLayouts[RAY_CAST_LAYOUT]);
-	m_grids[frameIndex].Barrier(m_commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	m_commandList.SetGraphicsDescriptorTable(0, m_cbvTables[frameIndex]);
-	m_commandList.SetGraphicsDescriptorTable(1, m_srvTables[SRV_TABLE_GRID + frameIndex]);
-	m_commandList.SetGraphicsDescriptorTable(2, m_samplerTable);
+	commandList.SetGraphicsPipelineLayout(m_pipelineLayouts[RAY_CAST_LAYOUT]);
+	commandList.SetGraphicsDescriptorTable(0, m_cbvTables[frameIndex]);
+	commandList.SetGraphicsDescriptorTable(1, m_srvTables[SRV_TABLE_GRID + frameIndex]);
+	commandList.SetGraphicsDescriptorTable(2, m_samplerTable);
 
 	// Set pipeline state
-	m_commandList.SetPipelineState(m_pipeline);
+	commandList.SetPipelineState(m_pipeline);
 
 	// Set viewport
 	Viewport viewport(0.0f, 0.0f, m_viewport.x, m_viewport.y);
 	RectRange scissorRect(0, 0, static_cast<long>(m_viewport.x), static_cast<long>(m_viewport.y));
-	m_commandList.RSSetViewports(1, &viewport);
-	m_commandList.RSSetScissorRects(1, &scissorRect);
+	commandList.RSSetViewports(1, &viewport);
+	commandList.RSSetScissorRects(1, &scissorRect);
 
-	m_commandList.OMSetRenderTargets(1, rtvs, nullptr);
+	commandList.OMSetRenderTargets(1, rtvs, nullptr);
 
 	// Record commands.
-	m_commandList.IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	m_commandList.Draw(3, 1, 0, 0);
+	commandList.IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	commandList.Draw(3, 1, 0, 0);
 }

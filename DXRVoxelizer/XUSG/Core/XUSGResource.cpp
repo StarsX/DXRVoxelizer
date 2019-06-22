@@ -6,6 +6,7 @@
 #include "XUSGResource.h"
 
 #define REMOVE_PACKED_UAV	ResourceFlags(~0x8000)
+#define ALIGN(x, n)			(((x) + (n - 1)) & ~(n - 1))
 
 using namespace std;
 using namespace XUSG;
@@ -68,8 +69,8 @@ ConstantBuffer::~ConstantBuffer()
 	if (m_resource) Unmap();
 }
 
-bool ConstantBuffer::Create(const Device &device, uint32_t byteWidth, uint32_t numCBVs, const uint32_t *offsets,
-	const wchar_t *name)
+bool ConstantBuffer::Create(const Device &device, uint32_t byteWidth, uint32_t numCBVs,
+	const uint32_t *offsets, MemoryType memoryType, const wchar_t *name)
 {
 	M_RETURN(!device, cerr, "The device is NULL.", false);
 	m_device = device;
@@ -96,9 +97,11 @@ bool ConstantBuffer::Create(const Device &device, uint32_t byteWidth, uint32_t n
 	const auto strideCbv = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	V_RETURN(m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		&CD3DX12_HEAP_PROPERTIES(memoryType),
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(byteWidth),
+		&CD3DX12_RESOURCE_DESC::Buffer(byteWidth, D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE),
+		memoryType == D3D12_HEAP_TYPE_DEFAULT ?
+		D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER :
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&m_resource)), clog, false);
@@ -121,6 +124,40 @@ bool ConstantBuffer::Create(const Device &device, uint32_t byteWidth, uint32_t n
 		m_cbvs[i] = allocateCbvPool(name);
 		m_device->CreateConstantBufferView(&desc, m_cbvs[i]);
 	}
+
+	return true;
+}
+
+bool ConstantBuffer::Upload(const CommandList &commandList, Resource &uploader,
+	const void *pData, size_t size, uint32_t i)
+{
+	const auto offset = m_cbvOffsets.empty() ? 0 : m_cbvOffsets[i];
+	SubresourceData subresourceData;
+	subresourceData.pData = pData;
+	subresourceData.RowPitch = static_cast<uint32_t>(size);
+	subresourceData.SlicePitch = static_cast<uint32_t>(m_resource->GetDesc().Width);
+
+	// Create the GPU upload buffer.
+	if (!uploader)
+	{
+		V_RETURN(m_device->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(ALIGN(offset + size, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&uploader)), clog, false);
+	}
+
+	// Copy data to the intermediate upload heap and then schedule a copy 
+	// from the upload heap to the buffer.
+	commandList.Barrier(1, &ResourceBarrier::Transition(m_resource.get(),
+		D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST));
+	M_RETURN(UpdateSubresources(const_cast<CommandList&>(commandList).GetCommandList().get(),
+		m_resource.get(), uploader.get(), offset, 0, 1, &subresourceData) <= 0,
+		clog, "Failed to upload the resource.", false);
+	commandList.Barrier(1, &ResourceBarrier::Transition(m_resource.get(),
+		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 
 	return true;
 }
@@ -186,12 +223,14 @@ ResourceBase::~ResourceBase()
 {
 }
 
-void ResourceBase::Barrier(const CommandList &commandList, ResourceState dstState,
-	uint32_t subresource)
+uint32_t ResourceBase::SetBarrier(ResourceBarrier *pBarriers, ResourceState dstState,
+	uint32_t numBarriers, uint32_t subresource, BarrierFlags flags)
 {
 	const auto &state = m_states[subresource == 0xffffffff ? 0 : subresource];
 	if (state != dstState || dstState == D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
-		commandList.Barrier(1, &Transition(dstState, subresource));
+		pBarriers[numBarriers++] = Transition(dstState, subresource, flags);
+
+	return numBarriers;
 }
 
 const Resource &ResourceBase::GetResource() const
@@ -204,15 +243,16 @@ Descriptor ResourceBase::GetSRV(uint32_t i) const
 	return m_srvs.size() > i ? m_srvs[i] : Descriptor(D3D12_DEFAULT);
 }
 
-ResourceBarrier ResourceBase::Transition(ResourceState dstState, uint32_t subresource)
+ResourceBarrier ResourceBase::Transition(ResourceState dstState,
+	uint32_t subresource, BarrierFlags flags)
 {
 	auto &state = m_states[subresource == 0xffffffff ? 0 : subresource];
 	const auto srcState = state;
-	state = dstState;
+	state = flags == D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY ? state : dstState;
 
 	return srcState == dstState && dstState == D3D12_RESOURCE_STATE_UNORDERED_ACCESS ?
 		ResourceBarrier::UAV(m_resource.get()) :
-		ResourceBarrier::Transition(m_resource.get(), srcState, dstState, subresource);
+		ResourceBarrier::Transition(m_resource.get(), srcState, dstState, subresource, flags);
 }
 
 ResourceState ResourceBase::GetResourceState(uint32_t i) const
@@ -255,7 +295,7 @@ Texture2D::~Texture2D()
 
 bool Texture2D::Create(const Device &device, uint32_t width, uint32_t height, Format format,
 	uint32_t arraySize, ResourceFlags resourceFlags, uint8_t numMips, uint8_t sampleCount,
-	PoolType poolType, ResourceState state, bool isCubeMap, const wchar_t *name)
+	MemoryType memoryType, ResourceState state, bool isCubeMap, const wchar_t *name)
 {
 	M_RETURN(!device, cerr, "The device is NULL.", false);
 	setDevice(device);
@@ -286,7 +326,7 @@ bool Texture2D::Create(const Device &device, uint32_t width, uint32_t height, Fo
 		initState = hasUAV ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : initState;
 	}
 
-	V_RETURN(m_device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(poolType),
+	V_RETURN(m_device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(memoryType),
 		D3D12_HEAP_FLAG_NONE, &desc, m_states[0], nullptr, IID_PPV_ARGS(&m_resource)), clog, false);
 	if (!m_name.empty()) m_resource->SetName((m_name + L".Resource").c_str());
 
@@ -302,38 +342,43 @@ bool Texture2D::Create(const Device &device, uint32_t width, uint32_t height, Fo
 	return true;
 }
 
-bool Texture2D::Upload(const CommandList &commandList, Resource &resourceUpload,
-	SubresourceData *pSubresourceData, uint32_t numSubresources, ResourceState dstState)
+bool Texture2D::Upload(const CommandList &commandList, Resource &uploader,
+	SubresourceData *pSubresourceData, uint32_t numSubresources,
+	ResourceState dstState, uint32_t i)
 {
 	N_RETURN(pSubresourceData, false);
 
-	const auto uploadBufferSize = GetRequiredIntermediateSize(m_resource.get(), 0, numSubresources);
-
 	// Create the GPU upload buffer.
-	V_RETURN(m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize),
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&resourceUpload)), clog, false);
-	if (!m_name.empty()) resourceUpload->SetName((m_name + L".UploaderResource").c_str());
+	if (!uploader)
+	{
+		const auto uploadBufferSize = GetRequiredIntermediateSize(m_resource.get(), i, numSubresources);
+		V_RETURN(m_device->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&uploader)), clog, false);
+		if (!m_name.empty()) uploader->SetName((m_name + L".UploaderResource").c_str());
+	}
 
 	// Copy data to the intermediate upload heap and then schedule a copy 
 	// from the upload heap to the Texture2D.
-	const auto &curState = m_states[0];
-	dstState = dstState ? dstState : curState;
-	if (curState != D3D12_RESOURCE_STATE_COPY_DEST) Barrier(commandList, D3D12_RESOURCE_STATE_COPY_DEST);
+	ResourceBarrier barrier;
+	dstState = dstState ? dstState : m_states[0];
+	auto numBarriers = SetBarrier(&barrier, D3D12_RESOURCE_STATE_COPY_DEST);
+	commandList.Barrier(numBarriers, &barrier);
 	M_RETURN(UpdateSubresources(const_cast<CommandList&>(commandList).GetCommandList().get(),
-		m_resource.get(), resourceUpload.get(), 0, 0, numSubresources, pSubresourceData) <= 0,
+		m_resource.get(), uploader.get(), 0, i, numSubresources, pSubresourceData) <= 0,
 		clog, "Failed to upload the resource.", false);
-	Barrier(commandList, dstState);
+	numBarriers = SetBarrier(&barrier, dstState);
+	commandList.Barrier(numBarriers, &barrier);
 
 	return true;
 }
 
-bool Texture2D::Upload(const CommandList &commandList, Resource &resourceUpload,
-	const uint8_t *pData, uint8_t stride, ResourceState dstState)
+bool Texture2D::Upload(const CommandList &commandList, Resource &uploader,
+	const void *pData, uint8_t stride, ResourceState dstState)
 {
 	const auto desc = m_resource->GetDesc();
 
@@ -342,7 +387,7 @@ bool Texture2D::Upload(const CommandList &commandList, Resource &resourceUpload,
 	subresourceData.RowPitch = stride * static_cast<uint32_t>(desc.Width);
 	subresourceData.SlicePitch = subresourceData.RowPitch * desc.Height;
 
-	return Upload(commandList, resourceUpload, &subresourceData, 1, dstState);
+	return Upload(commandList, uploader, &subresourceData, 1, dstState);
 }
 
 bool Texture2D::CreateSRVs(uint32_t arraySize, Format format, uint8_t numMips,
@@ -647,27 +692,27 @@ bool RenderTarget::CreateFromSwapChain(const Device &device, const SwapChain &sw
 	return true;
 }
 
-void RenderTarget::Populate(const CommandList &commandList, const PipelineLayout &pipelineLayout,
-	const Pipeline &pipeline, const DescriptorTable &srcSrvTable, const DescriptorTable &samplerTable,
-	uint32_t srcSlot, uint32_t samplerSlot, uint8_t mipLevel, int32_t slice)
+void RenderTarget::Populate(const CommandList &commandList, const DescriptorTable &srcSrvTable,
+	const DescriptorTable &samplerTable, uint32_t srcSlot, uint32_t samplerSlot, uint8_t mipLevel,
+	int32_t slice, const PipelineLayout &pipelineLayout, const Pipeline &pipeline)
 {
 	// Set render target
 	const auto rtvTable = make_shared<Descriptor>(GetRTV(slice, mipLevel));
-	Barrier(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET, slice * GetNumMips(slice) + mipLevel);
+	//Barrier(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET, slice * GetNumMips(slice) + mipLevel);
 	commandList.OMSetRenderTargets(1, rtvTable, nullptr);
 
 	// Set pipeline layout and descriptor tables
-	commandList.SetGraphicsPipelineLayout(pipelineLayout);
+	if (pipelineLayout) commandList.SetGraphicsPipelineLayout(pipelineLayout);
 	commandList.SetGraphicsDescriptorTable(srcSlot, srcSrvTable);
 	commandList.SetGraphicsDescriptorTable(samplerSlot, samplerTable);
 
 	// Set pipeline
-	commandList.SetPipelineState(pipeline);
+	if (pipeline) commandList.SetPipelineState(pipeline);
 
 	// Set viewport
 	const auto desc = m_resource->GetDesc();
-	const auto width = static_cast<uint32_t>(desc.Width >> mipLevel);
-	const auto height = static_cast<uint32_t>(desc.Height >> mipLevel);
+	const auto width = (max)(static_cast<uint32_t>(desc.Width >> mipLevel), 1u);
+	const auto height = (max)(desc.Height >> mipLevel, 1u);
 	const Viewport viewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height));
 	const RectRange rect(0, 0, width, height);
 	commandList.RSSetViewports(1, &viewport);
@@ -1120,7 +1165,7 @@ Texture3D::~Texture3D()
 
 bool Texture3D::Create(const Device &device, uint32_t width, uint32_t height,
 	uint32_t depth, Format format, ResourceFlags resourceFlags, uint8_t numMips,
-	PoolType poolType, ResourceState state, const wchar_t *name)
+	MemoryType memoryType, ResourceState state, const wchar_t *name)
 {
 	M_RETURN(!device, cerr, "The device is NULL.", false);
 	setDevice(device);
@@ -1151,7 +1196,7 @@ bool Texture3D::Create(const Device &device, uint32_t width, uint32_t height,
 		initState = hasUAV ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : initState;
 	}
 	
-	V_RETURN(m_device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(poolType),
+	V_RETURN(m_device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(memoryType),
 		D3D12_HEAP_FLAG_NONE, &desc, m_states[0], nullptr, IID_PPV_ARGS(&m_resource)), clog, false);
 	if (!m_name.empty()) m_resource->SetName((m_name + L".Resource").c_str());
 
@@ -1277,7 +1322,7 @@ RawBuffer::~RawBuffer()
 }
 
 bool RawBuffer::Create(const Device &device, uint32_t byteWidth, ResourceFlags resourceFlags,
-	PoolType poolType, ResourceState state, uint32_t numSRVs, const uint32_t *firstSRVElements,
+	MemoryType memoryType, ResourceState state, uint32_t numSRVs, const uint32_t *firstSRVElements,
 	uint32_t numUAVs, const uint32_t *firstUAVElements, const wchar_t *name)
 {
 	const auto hasSRV = !(resourceFlags & D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE);
@@ -1287,7 +1332,7 @@ bool RawBuffer::Create(const Device &device, uint32_t byteWidth, ResourceFlags r
 	numUAVs = hasUAV ? numUAVs : 0;
 
 	// Create buffer
-	N_RETURN(create(device, byteWidth, resourceFlags, poolType, state, numSRVs, numUAVs, name), false);
+	N_RETURN(create(device, byteWidth, resourceFlags, memoryType, state, numSRVs, numUAVs, name), false);
 
 	// Create SRV
 	if (numSRVs > 0) N_RETURN(CreateSRVs(byteWidth, firstSRVElements, numSRVs), false);
@@ -1298,36 +1343,39 @@ bool RawBuffer::Create(const Device &device, uint32_t byteWidth, ResourceFlags r
 	return true;
 }
 
-bool RawBuffer::Upload(const CommandList &commandList, Resource &resourceUpload,
-	const void *pData, ResourceState dstState)
+bool RawBuffer::Upload(const CommandList &commandList, Resource &uploader,
+	const void *pData, size_t size, ResourceState dstState, uint32_t i)
 {
-	const auto desc = m_resource->GetDesc();
-	const auto uploadBufferSize = GetRequiredIntermediateSize(m_resource.get(), 0, 1);
+	const auto offset = m_srvOffsets.empty() ? 0 : m_srvOffsets[i];
+	D3D12_SUBRESOURCE_DATA subresourceData;
+	subresourceData.pData = pData;
+	subresourceData.RowPitch = static_cast<uint32_t>(size);
+	subresourceData.SlicePitch = static_cast<uint32_t>(m_resource->GetDesc().Width);
 
 	// Create the GPU upload buffer.
-	V_RETURN(m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize),
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&resourceUpload)), clog, false);
-	if (!m_name.empty()) resourceUpload->SetName((m_name + L".UploaderResource").c_str());
+	if (!uploader)
+	{
+		V_RETURN(m_device->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(offset + size),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&uploader)), clog, false);
+		if (!m_name.empty()) uploader->SetName((m_name + L".UploaderResource").c_str());
+	}
 
 	// Copy data to the intermediate upload heap and then schedule a copy 
 	// from the upload heap to the buffer.
-	D3D12_SUBRESOURCE_DATA subresourceData;
-	subresourceData.pData = pData;
-	subresourceData.RowPitch = static_cast<uint32_t>(uploadBufferSize);
-	subresourceData.SlicePitch = subresourceData.RowPitch;
-
-	const auto &curState = m_states[0];
-	dstState = dstState ? dstState : curState;
-	if (curState != D3D12_RESOURCE_STATE_COPY_DEST) Barrier(commandList, D3D12_RESOURCE_STATE_COPY_DEST);
+	ResourceBarrier barrier;
+	dstState = dstState ? dstState : m_states[0];
+	auto numBarriers = SetBarrier(&barrier, D3D12_RESOURCE_STATE_COPY_DEST);
+	commandList.Barrier(numBarriers, &barrier);
 	M_RETURN(UpdateSubresources(const_cast<CommandList&>(commandList).GetCommandList().get(),
-		m_resource.get(), resourceUpload.get(), 0, 0, 1, &subresourceData) <= 0, clog,
-		"Failed to upload the resource.", false);
-	Barrier(commandList, dstState);
+		m_resource.get(), uploader.get(), offset, 0, 1, &subresourceData) <= 0,
+		clog, "Failed to upload the resource.", false);
+	numBarriers = SetBarrier(&barrier, dstState);
+	commandList.Barrier(numBarriers, &barrier);
 
 	return true;
 }
@@ -1418,7 +1466,7 @@ void RawBuffer::Unmap()
 }
 
 bool RawBuffer::create(const Device &device, uint32_t byteWidth, ResourceFlags resourceFlags,
-	PoolType poolType, ResourceState state, uint32_t numSRVs, uint32_t numUAVs,
+	MemoryType memoryType, ResourceState state, uint32_t numSRVs, uint32_t numUAVs,
 	const wchar_t *name)
 {
 	M_RETURN(!device, cerr, "The device is NULL.", false);
@@ -1440,7 +1488,7 @@ bool RawBuffer::create(const Device &device, uint32_t byteWidth, ResourceFlags r
 		initState = numUAVs > 0 ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : initState;
 	}
 
-	V_RETURN(m_device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(poolType),
+	V_RETURN(m_device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(memoryType),
 		D3D12_HEAP_FLAG_NONE, &desc, initState, nullptr, IID_PPV_ARGS(&m_resource)), clog, false);
 	if (!m_name.empty()) m_resource->SetName((m_name + L".Resource").c_str());
 
@@ -1461,7 +1509,7 @@ StructuredBuffer::~StructuredBuffer()
 }
 
 bool StructuredBuffer::Create(const Device &device, uint32_t numElements, uint32_t stride,
-	ResourceFlags resourceFlags, PoolType poolType, ResourceState state, uint32_t numSRVs,
+	ResourceFlags resourceFlags, MemoryType memoryType, ResourceState state, uint32_t numSRVs,
 	const uint32_t *firstSRVElements, uint32_t numUAVs, const uint32_t *firstUAVElements,
 	const wchar_t *name)
 {
@@ -1473,7 +1521,7 @@ bool StructuredBuffer::Create(const Device &device, uint32_t numElements, uint32
 
 	// Create buffer
 	N_RETURN(create(device, stride * numElements, resourceFlags,
-		poolType, state, numSRVs, numUAVs, name), false);
+		memoryType, state, numSRVs, numUAVs, name), false);
 
 	// Create SRV
 	if (numSRVs > 0) N_RETURN(CreateSRVs(numElements, stride, firstSRVElements, numSRVs), false);
@@ -1552,7 +1600,7 @@ TypedBuffer::~TypedBuffer()
 }
 
 bool TypedBuffer::Create(const Device &device, uint32_t numElements, uint32_t stride,
-	Format format, ResourceFlags resourceFlags, PoolType poolType, ResourceState state,
+	Format format, ResourceFlags resourceFlags, MemoryType memoryType, ResourceState state,
 	uint32_t numSRVs, const uint32_t *firstSRVElements,
 	uint32_t numUAVs, const uint32_t *firstUAVElements,
 	const wchar_t *name)
@@ -1575,7 +1623,7 @@ bool TypedBuffer::Create(const Device &device, uint32_t numElements, uint32_t st
 
 	// Create buffer
 	N_RETURN(create(device, stride * numElements, resourceFlags,
-		poolType, state, numSRVs, numUAVs, name), false);
+		memoryType, state, numSRVs, numUAVs, name), false);
 
 	// Create SRV
 	if (numSRVs > 0) N_RETURN(CreateSRVs(numElements, format, stride, firstSRVElements, numSRVs), false);
@@ -1653,7 +1701,7 @@ VertexBuffer::~VertexBuffer()
 }
 
 bool VertexBuffer::Create(const Device &device, uint32_t numVertices, uint32_t stride,
-	ResourceFlags resourceFlags, PoolType poolType, ResourceState state,
+	ResourceFlags resourceFlags, MemoryType memoryType, ResourceState state,
 	uint32_t numVBVs, const uint32_t *firstVertices,
 	uint32_t numSRVs, const uint32_t *firstSRVElements,
 	uint32_t numUAVs, const uint32_t *firstUAVElements,
@@ -1670,7 +1718,42 @@ bool VertexBuffer::Create(const Device &device, uint32_t numVertices, uint32_t s
 		state = hasUAV ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : state;
 	}
 
-	N_RETURN(StructuredBuffer::Create(device, numVertices, stride, resourceFlags, poolType,
+	N_RETURN(StructuredBuffer::Create(device, numVertices, stride, resourceFlags, memoryType,
+		state, numSRVs, firstSRVElements, numUAVs, firstUAVElements, name), false);
+
+	// Create vertex buffer view
+	m_vbvs.resize(numVBVs);
+	for (auto i = 0u; i < numVBVs; ++i)
+	{
+		const auto firstVertex = firstVertices ? firstVertices[i] : 0;
+		m_vbvs[i].BufferLocation = m_resource->GetGPUVirtualAddress() + stride * firstVertex;
+		m_vbvs[i].StrideInBytes = stride;
+		m_vbvs[i].SizeInBytes = stride * ((!firstVertices || i + 1 >= numVBVs ?
+			numVertices : firstVertices[i + 1]) - firstVertex);
+	}
+
+	return true;
+}
+
+bool VertexBuffer::CreateAsRaw(const Device &device, uint32_t numVertices, uint32_t stride,
+	ResourceFlags resourceFlags, MemoryType memoryType, ResourceState state,
+	uint32_t numVBVs, const uint32_t *firstVertices,
+	uint32_t numSRVs, const uint32_t *firstSRVElements,
+	uint32_t numUAVs, const uint32_t *firstUAVElements,
+	const wchar_t *name)
+{
+	const auto hasSRV = !(resourceFlags & D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE);
+	const bool hasUAV = resourceFlags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+
+	// Determine initial state
+	if (state == 0)
+	{
+		state = hasSRV ? D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE :
+			D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+		state = hasUAV ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : state;
+	}
+
+	N_RETURN(RawBuffer::Create(device, stride * numVertices, resourceFlags, memoryType,
 		state, numSRVs, firstSRVElements, numUAVs, firstUAVElements, name), false);
 
 	// Create vertex buffer view
@@ -1707,7 +1790,7 @@ IndexBuffer::~IndexBuffer()
 }
 
 bool IndexBuffer::Create(const Device &device, uint32_t byteWidth, Format format,
-	ResourceFlags resourceFlags, PoolType poolType, ResourceState state,
+	ResourceFlags resourceFlags, MemoryType memoryType, ResourceState state,
 	uint32_t numIBVs, const uint32_t *offsets,
 	uint32_t numSRVs, const uint32_t *firstSRVElements,
 	uint32_t numUAVs, const uint32_t *firstUAVElements,
@@ -1726,7 +1809,7 @@ bool IndexBuffer::Create(const Device &device, uint32_t byteWidth, Format format
 		D3D12_RESOURCE_STATE_INDEX_BUFFER);
 
 	N_RETURN(TypedBuffer::Create(device, byteWidth / stride, stride, format, resourceFlags,
-		poolType, state, numSRVs, firstSRVElements, numUAVs, firstUAVElements, name), false);
+		memoryType, state, numSRVs, firstSRVElements, numUAVs, firstUAVElements, name), false);
 
 	// Create index buffer view
 	m_ibvs.resize(numIBVs);

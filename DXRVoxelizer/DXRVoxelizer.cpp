@@ -155,13 +155,13 @@ void DXRVoxelizer::LoadAssets()
 	// Create ray tracing interfaces
 	CreateRaytracingInterfaces();
 
-	m_voxelizer = make_unique<Voxelizer>(m_device, m_commandList);
+	m_voxelizer = make_unique<Voxelizer>(m_device);
 	if (!m_voxelizer) ThrowIfFailed(E_FAIL);
 
-	Resource vbUpload, ibUpload;
+	vector<Resource> uploaders(0);
 	Geometry geometry;
-	if (!m_voxelizer->Init(m_width, m_height, m_renderTargets[0].GetResource()->GetDesc().Format,
-		m_depth.GetResource()->GetDesc().Format, vbUpload, ibUpload, geometry, m_meshFileName.c_str()))
+	if (!m_voxelizer->Init(m_commandList, m_width, m_height, m_renderTargets[0].GetResource()->GetDesc().Format,
+		m_depth.GetResource()->GetDesc().Format, uploaders, geometry, m_meshFileName.c_str()))
 		ThrowIfFailed(E_FAIL);
 
 	// Close the command list and execute it to begin the initial GPU setup.
@@ -355,7 +355,9 @@ void DXRVoxelizer::PopulateCommandList()
 	// re-recording.
 	ThrowIfFailed(m_commandList.Reset(m_commandAllocators[m_frameIndex].get(), nullptr));
 
-	m_renderTargets[m_frameIndex].Barrier(m_commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	ResourceBarrier barrier;
+	auto numBarriers = m_renderTargets[m_frameIndex].SetBarrier(&barrier, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	m_commandList.Barrier(numBarriers, &barrier);
 
 	// Record commands.
 	//const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
@@ -363,10 +365,11 @@ void DXRVoxelizer::PopulateCommandList()
 	m_commandList.ClearDepthStencilView(m_depth.GetDSV(), D3D12_CLEAR_FLAG_DEPTH, 1.0f);
 
 	// Voxelizer rendering
-	m_voxelizer->Render(m_frameIndex, m_rtvTables[m_frameIndex], m_depth.GetDSV());
+	m_voxelizer->Render(m_commandList, m_frameIndex, m_rtvTables[m_frameIndex], m_depth.GetDSV());
 
 	// Indicate that the back buffer will now be used to present.
-	m_renderTargets[m_frameIndex].Barrier(m_commandList, D3D12_RESOURCE_STATE_PRESENT);
+	numBarriers = m_renderTargets[m_frameIndex].SetBarrier(&barrier, D3D12_RESOURCE_STATE_PRESENT);
+	m_commandList.Barrier(numBarriers, &barrier);
 
 	ThrowIfFailed(m_commandList.Close());
 }
