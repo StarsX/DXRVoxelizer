@@ -165,7 +165,7 @@ bool Voxelizer::createPipelineLayouts()
 		// Get pipeline layout
 		Util::PipelineLayout pipelineLayout;
 		pipelineLayout.SetRange(0, DescriptorType::CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-		pipelineLayout.SetRange(1, DescriptorType::SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
+		pipelineLayout.SetRange(1, DescriptorType::SRV, 1, 0);
 		pipelineLayout.SetRange(2, DescriptorType::SAMPLER, 1, 0);
 		pipelineLayout.SetShaderStage(0, Shader::Stage::PS);
 		pipelineLayout.SetShaderStage(1, Shader::Stage::PS);
