@@ -129,6 +129,9 @@
     <ClInclude Include="Content\SharedConst.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="XUSG\Core\XUSGReflector.h">
+      <Filter>XUSG\Core\Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="XUSG\Core\XUSGCommand.cpp">
@@ -190,6 +193,9 @@
     </ClCompile>
     <ClCompile Include="DXRVoxelizer.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="XUSG\Core\XUSGReflector.cpp">
+      <Filter>XUSG\Core\Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
