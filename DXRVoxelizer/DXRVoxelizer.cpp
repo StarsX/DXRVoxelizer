@@ -132,7 +132,7 @@ void DXRVoxelizer::LoadPipeline()
 	// Create a RTV and a command allocator for each frame.
 	for (auto n = 0u; n < FrameCount; ++n)
 	{
-		m_renderTargets[n].CreateFromSwapChain(m_device.Common, m_swapChain, n);
+		N_RETURN(m_renderTargets[n].CreateFromSwapChain(m_device.Common, m_swapChain, n), ThrowIfFailed(E_FAIL));
 
 		Util::DescriptorTable rtvTable;
 		rtvTable.SetDescriptors(0, 1, &m_renderTargets[n].GetRTV());
@@ -142,7 +142,8 @@ void DXRVoxelizer::LoadPipeline()
 	}
 
 	// Create a DSV
-	m_depth.Create(m_device.Common, m_width, m_height, DXGI_FORMAT_D24_UNORM_S8_UINT, D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE);
+	N_RETURN(m_depth.Create(m_device.Common, m_width, m_height, DXGI_FORMAT_D24_UNORM_S8_UINT,
+		D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE), ThrowIfFailed(E_FAIL));
 }
 
 // Load the sample assets.
