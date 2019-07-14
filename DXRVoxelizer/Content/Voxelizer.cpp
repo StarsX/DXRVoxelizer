@@ -14,12 +14,12 @@ using namespace DirectX;
 using namespace XUSG;
 using namespace XUSG::RayTracing;
 
-const wchar_t *Voxelizer::HitGroupName = L"hitGroup";
-const wchar_t *Voxelizer::RaygenShaderName = L"raygenMain";
-const wchar_t *Voxelizer::ClosestHitShaderName = L"closestHitMain";
-const wchar_t *Voxelizer::MissShaderName = L"missMain";
+const wchar_t* Voxelizer::HitGroupName = L"hitGroup";
+const wchar_t* Voxelizer::RaygenShaderName = L"raygenMain";
+const wchar_t* Voxelizer::ClosestHitShaderName = L"closestHitMain";
+const wchar_t* Voxelizer::MissShaderName = L"missMain";
 
-Voxelizer::Voxelizer(const RayTracing::Device &device) :
+Voxelizer::Voxelizer(const RayTracing::Device& device) :
 	m_device(device),
 	m_instances()
 {
@@ -36,12 +36,12 @@ Voxelizer::~Voxelizer()
 {
 }
 
-bool Voxelizer::Init(const RayTracing::CommandList &commandList, uint32_t width, uint32_t height,
-	Format rtFormat, Format dsFormat, vector<Resource> &uploaders, Geometry &geometry, const char *fileName)
+bool Voxelizer::Init(const RayTracing::CommandList& commandList, uint32_t width, uint32_t height,
+	Format rtFormat, Format dsFormat, vector<Resource>& uploaders, Geometry& geometry, const char* fileName)
 {
 	m_viewport.x = static_cast<float>(width);
 	m_viewport.y = static_cast<float>(height);
-	
+
 	// Load inputs
 	ObjLoader objLoader;
 	if (!objLoader.Import(fileName, true, true)) return false;
@@ -59,7 +59,7 @@ bool Voxelizer::Init(const RayTracing::CommandList &commandList, uint32_t width,
 	N_RETURN(createCB(), false);
 
 	// Create output grids and build acceleration structures
-	for (auto &grid : m_grids)
+	for (auto& grid : m_grids)
 		N_RETURN(grid.Create(m_device.Common, GRID_SIZE, GRID_SIZE, GRID_SIZE, DXGI_FORMAT_R10G10B10A2_UNORM,
 			D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS), false);
 	//m_depth.Create(m_device.Common, width, height, DXGI_FORMAT_D24_UNORM_S8_UINT, D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE);
@@ -94,8 +94,8 @@ void Voxelizer::UpdateFrame(uint32_t frameIndex, CXMVECTOR eyePt, CXMMATRIX view
 	pCbPerObject->screenToLocal = XMMatrixTranspose(screenToLocal);
 }
 
-void Voxelizer::Render(const RayTracing::CommandList &commandList, uint32_t frameIndex,
-	const RenderTargetTable &rtvs, const Descriptor &dsv)
+void Voxelizer::Render(const RayTracing::CommandList& commandList, uint32_t frameIndex,
+	const RenderTargetTable& rtvs, const Descriptor& dsv)
 {
 	const DescriptorPool descriptorPools[] =
 	{
@@ -108,8 +108,8 @@ void Voxelizer::Render(const RayTracing::CommandList &commandList, uint32_t fram
 	renderRayCast(commandList, frameIndex, rtvs, dsv);
 }
 
-bool Voxelizer::createVB(const RayTracing::CommandList &commandList, uint32_t numVert,
-	uint32_t stride, const uint8_t *pData, vector<Resource> &uploaders)
+bool Voxelizer::createVB(const RayTracing::CommandList& commandList, uint32_t numVert,
+	uint32_t stride, const uint8_t* pData, vector<Resource>& uploaders)
 {
 	N_RETURN(m_vertexBuffer.Create(m_device.Common, numVert, stride, D3D12_RESOURCE_FLAG_NONE,
 		D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COPY_DEST), false);
@@ -119,8 +119,8 @@ bool Voxelizer::createVB(const RayTracing::CommandList &commandList, uint32_t nu
 		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 }
 
-bool Voxelizer::createIB(const RayTracing::CommandList &commandList, uint32_t numIndices,
-	const uint32_t *pData, vector<Resource> &uploaders)
+bool Voxelizer::createIB(const RayTracing::CommandList& commandList, uint32_t numIndices,
+	const uint32_t* pData, vector<Resource>& uploaders)
 {
 	const uint32_t byteWidth = sizeof(uint32_t) * numIndices;
 	N_RETURN(m_indexBuffer.Create(m_device.Common, byteWidth, DXGI_FORMAT_R32_UINT,
@@ -274,7 +274,7 @@ bool Voxelizer::createDescriptorTables()
 	return true;
 }
 
-bool Voxelizer::buildAccelerationStructures(const RayTracing::CommandList &commandList, Geometry *geometries)
+bool Voxelizer::buildAccelerationStructures(const RayTracing::CommandList& commandList, Geometry* geometries)
 {
 	AccelerationStructure::SetFrameCount(FrameCount);
 
@@ -298,13 +298,13 @@ bool Voxelizer::buildAccelerationStructures(const RayTracing::CommandList &comma
 
 	// Get descriptor pool and create descriptor tables
 	N_RETURN(createDescriptorTables(), false);
-	const auto &descriptorPool = m_descriptorTableCache.GetDescriptorPool(CBV_SRV_UAV_POOL);
+	const auto& descriptorPool = m_descriptorTableCache.GetDescriptorPool(CBV_SRV_UAV_POOL);
 
 	// Set instance
 	XMFLOAT4X4 matrix;
 	const auto normalizedToLocal = XMMatrixScaling(m_bound.w, m_bound.w, m_bound.w) * XMMatrixTranslation(m_bound.x, m_bound.y, m_bound.z);
 	XMStoreFloat4x4(&matrix, XMMatrixTranspose(XMMatrixInverse(nullptr, normalizedToLocal)));
-	float *const pTransform[] = { reinterpret_cast<float*>(&matrix) };
+	float* const pTransform[] = { reinterpret_cast<float*>(&matrix) };
 	TopLevelAS::SetInstances(m_device, m_instances, 1, &m_bottomLevelAS, pTransform);
 
 	// Build bottom level ASs
@@ -336,7 +336,7 @@ bool Voxelizer::buildShaderTables()
 	return true;
 }
 
-void Voxelizer::voxelize(const RayTracing::CommandList &commandList, uint32_t frameIndex)
+void Voxelizer::voxelize(const RayTracing::CommandList& commandList, uint32_t frameIndex)
 {
 	// Set resource barrier
 	ResourceBarrier barrier;
@@ -355,8 +355,8 @@ void Voxelizer::voxelize(const RayTracing::CommandList &commandList, uint32_t fr
 		m_hitGroupShaderTable, m_missShaderTable, m_rayGenShaderTable);
 }
 
-void Voxelizer::renderRayCast(const RayTracing::CommandList &commandList, uint32_t frameIndex,
-	const RenderTargetTable &rtvs, const Descriptor &dsv)
+void Voxelizer::renderRayCast(const RayTracing::CommandList& commandList, uint32_t frameIndex,
+	const RenderTargetTable& rtvs, const Descriptor& dsv)
 {
 	// Set resource barrier
 	ResourceBarrier barrier;

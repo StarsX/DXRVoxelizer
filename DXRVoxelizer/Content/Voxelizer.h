@@ -10,16 +10,16 @@
 class Voxelizer
 {
 public:
-	Voxelizer(const XUSG::RayTracing::Device &device);
+	Voxelizer(const XUSG::RayTracing::Device& device);
 	virtual ~Voxelizer();
 
-	bool Init(const XUSG::RayTracing::CommandList &commandList, uint32_t width, uint32_t height,
-		XUSG::Format rtFormat, XUSG::Format dsFormat, std::vector<XUSG::Resource> &uploaders,
-		XUSG::RayTracing::Geometry &geometry, const char *fileName);
+	bool Init(const XUSG::RayTracing::CommandList& commandList, uint32_t width, uint32_t height,
+		XUSG::Format rtFormat, XUSG::Format dsFormat, std::vector<XUSG::Resource>& uploaders,
+		XUSG::RayTracing::Geometry& geometry, const char* fileName);
 
 	void UpdateFrame(uint32_t frameIndex, DirectX::CXMVECTOR eyePt, DirectX::CXMMATRIX viewProj);
-	void Render(const XUSG::RayTracing::CommandList &commandList, uint32_t frameIndex,
-		const XUSG::RenderTargetTable &rtvs, const XUSG::Descriptor &dsv);
+	void Render(const XUSG::RayTracing::CommandList& commandList, uint32_t frameIndex,
+		const XUSG::RenderTargetTable& rtvs, const XUSG::Descriptor& dsv);
 
 	static const uint32_t FrameCount = 3;
 
@@ -68,21 +68,21 @@ protected:
 		DirectX::XMMATRIX screenToLocal;
 	};
 
-	bool createVB(const XUSG::RayTracing::CommandList &commandList, uint32_t numVert,
-		uint32_t stride, const uint8_t *pData, std::vector<XUSG::Resource> &uploaders);
-	bool createIB(const XUSG::RayTracing::CommandList &commandList, uint32_t numIndices,
-		const uint32_t *pData, std::vector<XUSG::Resource> &uploaders);
+	bool createVB(const XUSG::RayTracing::CommandList& commandList, uint32_t numVert,
+		uint32_t stride, const uint8_t* pData, std::vector<XUSG::Resource>& uploaders);
+	bool createIB(const XUSG::RayTracing::CommandList& commandList, uint32_t numIndices,
+		const uint32_t* pData, std::vector<XUSG::Resource>& uploaders);
 	bool createCB();
 	bool createPipelineLayouts();
 	bool createPipelines(XUSG::Format rtFormat, XUSG::Format dsFormat);
 	bool createDescriptorTables();
-	bool buildAccelerationStructures(const XUSG::RayTracing::CommandList &commandList,
-		XUSG::RayTracing::Geometry *geometries);
+	bool buildAccelerationStructures(const XUSG::RayTracing::CommandList& commandList,
+		XUSG::RayTracing::Geometry* geometries);
 	bool buildShaderTables();
 
-	void voxelize(const XUSG::RayTracing::CommandList &commandList, uint32_t frameIndex);
-	void renderRayCast(const XUSG::RayTracing::CommandList &commandList, uint32_t frameIndex,
-		const XUSG::RenderTargetTable &rtvs, const XUSG::Descriptor &dsv);
+	void voxelize(const XUSG::RayTracing::CommandList& commandList, uint32_t frameIndex);
+	void renderRayCast(const XUSG::RayTracing::CommandList& commandList, uint32_t frameIndex,
+		const XUSG::RenderTargetTable& rtvs, const XUSG::Descriptor& dsv);
 
 	XUSG::RayTracing::Device m_device;
 
@@ -110,10 +110,10 @@ protected:
 	XUSG::Resource				m_instances;
 
 	// Shader tables
-	static const wchar_t *HitGroupName;
-	static const wchar_t *RaygenShaderName;
-	static const wchar_t *ClosestHitShaderName;
-	static const wchar_t *MissShaderName;
+	static const wchar_t* HitGroupName;
+	static const wchar_t* RaygenShaderName;
+	static const wchar_t* ClosestHitShaderName;
+	static const wchar_t* MissShaderName;
 	XUSG::RayTracing::ShaderTable	m_missShaderTable;
 	XUSG::RayTracing::ShaderTable	m_hitGroupShaderTable;
 	XUSG::RayTracing::ShaderTable	m_rayGenShaderTable;
