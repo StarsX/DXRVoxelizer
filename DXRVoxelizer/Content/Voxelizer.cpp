@@ -6,7 +6,6 @@
 #include "ObjLoader.h"
 #include "Voxelizer.h"
 
-#define SizeOfInUint32(obj) ((sizeof(obj) - 1) / sizeof(uint32_t) + 1)
 #define GRID_SIZE			64
 
 using namespace std;
