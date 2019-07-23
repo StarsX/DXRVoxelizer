@@ -113,8 +113,6 @@ void DXRVoxelizer::LoadPipeline()
 	ThrowIfFailed(swapChain.As(&m_swapChain));
 	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
 
-	m_descriptorTableCache.SetDevice(m_device.Common);
-
 	// Create frame resources.
 	// Create a RTV and a command allocator for each frame.
 	for (auto n = 0u; n < FrameCount; ++n)
