@@ -15,7 +15,7 @@ public:
 
 	bool Init(const XUSG::RayTracing::CommandList& commandList, uint32_t width, uint32_t height,
 		XUSG::Format rtFormat, XUSG::Format dsFormat, std::vector<XUSG::Resource>& uploaders,
-		XUSG::RayTracing::Geometry& geometry, const char* fileName);
+		XUSG::RayTracing::Geometry& geometry, const char* fileName, const DirectX::XMFLOAT4& posScale);
 
 	void UpdateFrame(uint32_t frameIndex, DirectX::CXMVECTOR eyePt, DirectX::CXMMATRIX viewProj);
 	void Render(const XUSG::RayTracing::CommandList& commandList, uint32_t frameIndex,
@@ -27,7 +27,6 @@ protected:
 	enum PipelineLayoutIndex : uint8_t
 	{
 		GLOBAL_LAYOUT,
-		//RAY_GEN_LAYOUT,
 		RAY_CAST_LAYOUT,
 
 		NUM_PIPELINE_LAYOUT
@@ -127,4 +126,5 @@ protected:
 
 	DirectX::XMFLOAT2				m_viewport;
 	DirectX::XMFLOAT4				m_bound;
+	DirectX::XMFLOAT4				m_posScale;
 };

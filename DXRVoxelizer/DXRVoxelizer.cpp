@@ -144,8 +144,8 @@ void DXRVoxelizer::LoadAssets()
 	vector<Resource> uploaders(0);
 	Geometry geometry;
 	if (!m_voxelizer->Init(m_commandList, m_width, m_height, m_renderTargets[0].GetResource()->GetDesc().Format,
-		m_depth.GetResource()->GetDesc().Format, uploaders, geometry, m_meshFileName.c_str()))
-		ThrowIfFailed(E_FAIL);
+		m_depth.GetResource()->GetDesc().Format, uploaders, geometry, m_meshFileName.c_str(),
+		m_meshPosScale)) ThrowIfFailed(E_FAIL);
 
 	// Close the command list and execute it to begin the initial GPU setup.
 	ThrowIfFailed(m_commandList.Close());

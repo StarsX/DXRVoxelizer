@@ -36,10 +36,12 @@ Voxelizer::~Voxelizer()
 }
 
 bool Voxelizer::Init(const RayTracing::CommandList& commandList, uint32_t width, uint32_t height,
-	Format rtFormat, Format dsFormat, vector<Resource>& uploaders, Geometry& geometry, const char* fileName)
+	Format rtFormat, Format dsFormat, vector<Resource>& uploaders, Geometry& geometry,
+	const char* fileName, const XMFLOAT4& posScale)
 {
 	m_viewport.x = static_cast<float>(width);
 	m_viewport.y = static_cast<float>(height);
+	m_posScale = posScale;
 
 	// Load inputs
 	ObjLoader objLoader;
@@ -72,7 +74,9 @@ void Voxelizer::UpdateFrame(uint32_t frameIndex, CXMVECTOR eyePt, CXMMATRIX view
 {
 	// General matrices
 	const auto world = XMMatrixScaling(m_bound.w, m_bound.w, m_bound.w) *
-		XMMatrixTranslation(m_bound.x, m_bound.y, m_bound.z);
+		XMMatrixTranslation(m_bound.x, m_bound.y, m_bound.z) *
+		XMMatrixScaling(m_posScale.w, m_posScale.w, m_posScale.w) *
+		XMMatrixTranslation(m_posScale.x, m_posScale.y, m_posScale.z);
 	const auto worldI = XMMatrixInverse(nullptr, world);
 	const auto worldViewProj = world * viewProj;
 
