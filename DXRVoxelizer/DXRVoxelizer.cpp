@@ -120,11 +120,6 @@ void DXRVoxelizer::LoadPipeline()
 	for (auto n = 0u; n < FrameCount; ++n)
 	{
 		N_RETURN(m_renderTargets[n].CreateFromSwapChain(m_device.Common, m_swapChain, n), ThrowIfFailed(E_FAIL));
-
-		Util::DescriptorTable rtvTable;
-		rtvTable.SetDescriptors(0, 1, &m_renderTargets[n].GetRTV());
-		m_rtvTables[n] = rtvTable.GetRtvTable(m_descriptorTableCache);
-
 		ThrowIfFailed(m_device.Common->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocators[n])));
 	}
 
@@ -182,7 +177,7 @@ void DXRVoxelizer::LoadAssets()
 	// View initialization
 	// View initialization
 	m_focusPt = XMFLOAT3(0.0f, 4.0f, 0.0f);
-	m_eyePt = XMFLOAT3(-8.0f, 12.0f, 14.0f);
+	m_eyePt = XMFLOAT3(8.0f, 12.0f, -14.0f);
 	const auto focusPt = XMLoadFloat3(&m_focusPt);
 	const auto eyePt = XMLoadFloat3(&m_eyePt);
 	const auto view = XMMatrixLookAtLH(eyePt, focusPt, XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f));
@@ -350,7 +345,7 @@ void DXRVoxelizer::PopulateCommandList()
 	m_commandList.ClearDepthStencilView(m_depth.GetDSV(), D3D12_CLEAR_FLAG_DEPTH, 1.0f);
 
 	// Voxelizer rendering
-	m_voxelizer->Render(m_commandList, m_frameIndex, m_rtvTables[m_frameIndex], m_depth.GetDSV());
+	m_voxelizer->Render(m_commandList, m_frameIndex, m_renderTargets[m_frameIndex].GetRTV(), m_depth.GetDSV());
 
 	// Indicate that the back buffer will now be used to present.
 	numBarriers = m_renderTargets[m_frameIndex].SetBarrier(&barrier, D3D12_RESOURCE_STATE_PRESENT);

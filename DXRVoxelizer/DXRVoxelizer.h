@@ -63,7 +63,6 @@ private:
 
 	// App resources.
 	std::unique_ptr<Voxelizer> m_voxelizer;
-	XUSG::RenderTargetTable	m_rtvTables[FrameCount];
 	XUSG::DepthStencil		m_depth;
 	DirectX::XMFLOAT4X4		m_proj;
 	DirectX::XMFLOAT4X4		m_view;

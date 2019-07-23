@@ -19,7 +19,7 @@ public:
 
 	void UpdateFrame(uint32_t frameIndex, DirectX::CXMVECTOR eyePt, DirectX::CXMMATRIX viewProj);
 	void Render(const XUSG::RayTracing::CommandList& commandList, uint32_t frameIndex,
-		const XUSG::RenderTargetTable& rtvs, const XUSG::Descriptor& dsv);
+		const XUSG::Descriptor& rtv, const XUSG::Descriptor& dsv);
 
 	static const uint32_t FrameCount = 3;
 
@@ -82,7 +82,7 @@ protected:
 
 	void voxelize(const XUSG::RayTracing::CommandList& commandList, uint32_t frameIndex);
 	void renderRayCast(const XUSG::RayTracing::CommandList& commandList, uint32_t frameIndex,
-		const XUSG::RenderTargetTable& rtvs, const XUSG::Descriptor& dsv);
+		const XUSG::Descriptor& rtv, const XUSG::Descriptor& dsv);
 
 	XUSG::RayTracing::Device m_device;
 

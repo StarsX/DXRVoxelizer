@@ -78,7 +78,7 @@ void Voxelizer::UpdateFrame(uint32_t frameIndex, CXMVECTOR eyePt, CXMMATRIX view
 
 	// Screen space matrices
 	const auto pCbPerObject = reinterpret_cast<CBPerObject*>(m_cbPerObject.Map(frameIndex));
-	pCbPerObject->localSpaceLightPt = XMVector3TransformCoord(XMVectorSet(10.0f, 45.0f, 75.0f, 0.0f), worldI);
+	pCbPerObject->localSpaceLightPt = XMVector3TransformCoord(XMVectorSet(-10.0f, 45.0f, -75.0f, 0.0f), worldI);
 	pCbPerObject->localSpaceEyePt = XMVector3TransformCoord(eyePt, worldI);
 
 	const auto mToScreen = XMMATRIX
@@ -94,7 +94,7 @@ void Voxelizer::UpdateFrame(uint32_t frameIndex, CXMVECTOR eyePt, CXMMATRIX view
 }
 
 void Voxelizer::Render(const RayTracing::CommandList& commandList, uint32_t frameIndex,
-	const RenderTargetTable& rtvs, const Descriptor& dsv)
+	const Descriptor& rtv, const Descriptor& dsv)
 {
 	const DescriptorPool descriptorPools[] =
 	{
@@ -104,7 +104,7 @@ void Voxelizer::Render(const RayTracing::CommandList& commandList, uint32_t fram
 	commandList.SetDescriptorPools(static_cast<uint32_t>(size(descriptorPools)), descriptorPools);
 
 	voxelize(commandList, frameIndex);
-	renderRayCast(commandList, frameIndex, rtvs, dsv);
+	renderRayCast(commandList, frameIndex, rtv, dsv);
 }
 
 bool Voxelizer::createVB(const RayTracing::CommandList& commandList, uint32_t numVert,
@@ -355,7 +355,7 @@ void Voxelizer::voxelize(const RayTracing::CommandList& commandList, uint32_t fr
 }
 
 void Voxelizer::renderRayCast(const RayTracing::CommandList& commandList, uint32_t frameIndex,
-	const RenderTargetTable& rtvs, const Descriptor& dsv)
+	const Descriptor& rtv, const Descriptor& dsv)
 {
 	// Set resource barrier
 	ResourceBarrier barrier;
@@ -377,7 +377,7 @@ void Voxelizer::renderRayCast(const RayTracing::CommandList& commandList, uint32
 	commandList.RSSetViewports(1, &viewport);
 	commandList.RSSetScissorRects(1, &scissorRect);
 
-	commandList.OMSetRenderTargets(1, rtvs, nullptr);
+	commandList.OMSetRenderTargets(1, &rtv);
 
 	// Record commands.
 	commandList.IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
