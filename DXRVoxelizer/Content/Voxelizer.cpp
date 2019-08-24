@@ -61,9 +61,9 @@ bool Voxelizer::Init(const RayTracing::CommandList& commandList, uint32_t width,
 
 	// Create output grids and build acceleration structures
 	for (auto& grid : m_grids)
-		N_RETURN(grid.Create(m_device.Common, GRID_SIZE, GRID_SIZE, GRID_SIZE, DXGI_FORMAT_R10G10B10A2_UNORM,
-			D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS), false);
-	//m_depth.Create(m_device.Common, width, height, DXGI_FORMAT_D24_UNORM_S8_UINT, D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE);
+		N_RETURN(grid.Create(m_device.Common, GRID_SIZE, GRID_SIZE, GRID_SIZE, Format::R10G10B10A2_UNORM,
+			ResourceFlag::ALLOW_UNORDERED_ACCESS), false);
+	//m_depth.Create(m_device.Common, width, height, Format::D24_UNORM_S8_UINT, ResourceFlag::DENY_SHADER_RESOURCE);
 	N_RETURN(buildAccelerationStructures(commandList, &geometry), false);
 	N_RETURN(buildShaderTables(), false);
 
@@ -114,24 +114,24 @@ void Voxelizer::Render(const RayTracing::CommandList& commandList, uint32_t fram
 bool Voxelizer::createVB(const RayTracing::CommandList& commandList, uint32_t numVert,
 	uint32_t stride, const uint8_t* pData, vector<Resource>& uploaders)
 {
-	N_RETURN(m_vertexBuffer.Create(m_device.Common, numVert, stride, D3D12_RESOURCE_FLAG_NONE,
-		D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COPY_DEST), false);
+	N_RETURN(m_vertexBuffer.Create(m_device.Common, numVert, stride, ResourceFlag::NONE,
+		MemoryType::DEFAULT, ResourceState::COPY_DEST), false);
 	uploaders.push_back(nullptr);
 
 	return m_vertexBuffer.Upload(commandList, uploaders.back(), pData, stride * numVert,
-		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		ResourceState::NON_PIXEL_SHADER_RESOURCE);
 }
 
 bool Voxelizer::createIB(const RayTracing::CommandList& commandList, uint32_t numIndices,
 	const uint32_t* pData, vector<Resource>& uploaders)
 {
 	const uint32_t byteWidth = sizeof(uint32_t) * numIndices;
-	N_RETURN(m_indexBuffer.Create(m_device.Common, byteWidth, DXGI_FORMAT_R32_UINT,
-		D3D12_RESOURCE_FLAG_NONE, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COPY_DEST), false);
+	N_RETURN(m_indexBuffer.Create(m_device.Common, byteWidth, Format::R32_UINT,
+		ResourceFlag::NONE, MemoryType::DEFAULT, ResourceState::COPY_DEST), false);
 	uploaders.push_back(nullptr);
 
 	return m_indexBuffer.Upload(commandList, uploaders.back(), pData, byteWidth,
-		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		ResourceState::NON_PIXEL_SHADER_RESOURCE);
 }
 
 bool Voxelizer::createCB()
@@ -150,7 +150,7 @@ bool Voxelizer::createPipelineLayouts()
 		pipelineLayout.SetRange(INDEX_BUFFERS, DescriptorType::SRV, 1, 0, 1);
 		pipelineLayout.SetRange(VERTEX_BUFFERS, DescriptorType::SRV, 1, 0, 2);
 		X_RETURN(m_pipelineLayouts[GLOBAL_LAYOUT], pipelineLayout.GetPipelineLayout(m_device, m_pipelineLayoutCache,
-			D3D12_ROOT_SIGNATURE_FLAG_NONE, NumUAVs, L"RayTracerGlobalPipelineLayout"), false);
+			PipelineLayoutFlag::NONE, NumUAVs, L"RayTracerGlobalPipelineLayout"), false);
 	}
 
 	// Local pipeline layout for RayGen shader
@@ -160,21 +160,21 @@ bool Voxelizer::createPipelineLayouts()
 		RayTracing::PipelineLayout pipelineLayout;
 		pipelineLayout.SetConstants(0, SizeOfInUint32(XMFLOAT4), 0);
 		X_RETURN(m_pipelineLayouts[RAY_GEN_LAYOUT], pipelineLayout.GetPipelineLayout(m_device, m_pipelineLayoutCache,
-			D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE, NumUAVs, L"RayTracerRayGenPipelineLayout"), false);
+			PipelineLayoutFlag::LOCAL_PIPELINE_LAYOUT, NumUAVs, L"RayTracerRayGenPipelineLayout"), false);
 	}
 #endif
 
 	{
 		// Get pipeline layout
 		Util::PipelineLayout pipelineLayout;
-		pipelineLayout.SetRange(0, DescriptorType::CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+		pipelineLayout.SetRange(0, DescriptorType::CBV, 1, 0, 0, DescriptorRangeFlag::DATA_STATIC);
 		pipelineLayout.SetRange(1, DescriptorType::SRV, 1, 0);
 		pipelineLayout.SetRange(2, DescriptorType::SAMPLER, 1, 0);
 		pipelineLayout.SetShaderStage(0, Shader::Stage::PS);
 		pipelineLayout.SetShaderStage(1, Shader::Stage::PS);
 		pipelineLayout.SetShaderStage(2, Shader::Stage::PS);
 		X_RETURN(m_pipelineLayouts[RAY_CAST_LAYOUT], pipelineLayout.GetPipelineLayout(m_pipelineLayoutCache,
-			D3D12_ROOT_SIGNATURE_FLAG_NONE, L"RayCastLayout"), false);
+			PipelineLayoutFlag::NONE, L"RayCastLayout"), false);
 	}
 
 	return true;
@@ -207,7 +207,7 @@ bool Voxelizer::createPipelines(Format rtFormat, Format dsFormat)
 		state.SetPipelineLayout(m_pipelineLayouts[RAY_CAST_LAYOUT]);
 		state.SetShader(Shader::Stage::VS, m_shaderPool.GetShader(Shader::Stage::VS, VS_SCREEN_QUAD));
 		state.SetShader(Shader::Stage::PS, m_shaderPool.GetShader(Shader::Stage::PS, PS_RAY_CAST));
-		state.IASetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+		state.IASetPrimitiveTopologyType(PrimitiveTopologyType::TRIANGLE);
 		state.DSSetState(Graphics::DepthStencilPreset::DEPTH_STENCIL_NONE, m_graphicsPipelineCache);
 		state.OMSetRTVFormats(&rtFormat, 1);
 		X_RETURN(m_pipeline, state.GetPipeline(m_graphicsPipelineCache, L"RayCast"), false);
@@ -282,7 +282,7 @@ bool Voxelizer::buildAccelerationStructures(const RayTracing::CommandList& comma
 	AccelerationStructure::SetFrameCount(FrameCount);
 
 	// Set geometries
-	BottomLevelAS::SetGeometries(geometries, 1, DXGI_FORMAT_R32G32B32_FLOAT,
+	BottomLevelAS::SetGeometries(geometries, 1, Format::R32G32B32_FLOAT,
 		&m_vertexBuffer.GetVBV(), &m_indexBuffer.GetIBV());
 
 	// Descriptor index in descriptor pool
@@ -343,7 +343,7 @@ void Voxelizer::voxelize(const RayTracing::CommandList& commandList, uint32_t fr
 {
 	// Set resource barrier
 	ResourceBarrier barrier;
-	const auto numBarriers = m_grids[frameIndex].SetBarrier(&barrier, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	const auto numBarriers = m_grids[frameIndex].SetBarrier(&barrier, ResourceState::UNORDERED_ACCESS);
 	commandList.Barrier(numBarriers, &barrier);
 
 	// Set descriptor tables
@@ -363,7 +363,7 @@ void Voxelizer::renderRayCast(const RayTracing::CommandList& commandList, uint32
 {
 	// Set resource barrier
 	ResourceBarrier barrier;
-	const auto numBarriers = m_grids[frameIndex].SetBarrier(&barrier, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	const auto numBarriers = m_grids[frameIndex].SetBarrier(&barrier, ResourceState::PIXEL_SHADER_RESOURCE);
 	commandList.Barrier(numBarriers, &barrier);
 
 	// Set descriptor tables
@@ -384,6 +384,6 @@ void Voxelizer::renderRayCast(const RayTracing::CommandList& commandList, uint32
 	commandList.OMSetRenderTargets(1, &rtv);
 
 	// Record commands.
-	commandList.IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	commandList.IASetPrimitiveTopology(PrimitiveTopology::TRIANGLESTRIP);
 	commandList.Draw(3, 1, 0, 0);
 }
