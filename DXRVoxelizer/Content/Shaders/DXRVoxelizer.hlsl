@@ -76,7 +76,7 @@ void raygenMain()
 	ray.TMin = 0.0;
 	ray.TMax = 10000.0;
 	payload.Normal = 0.0.xxx;
-	payload.IsInside = 0;
+	payload.IsInside = false;
 	TraceRay(g_scene, RAY_FLAG_NONE, ~0, 0, 1, 0, ray, payload);
 	
 	// Write the raytraced color to the output texture.
@@ -136,6 +136,7 @@ void closestHitMain(inout RayPayload payload, TriAttributes attr)
 
 	payload.Normal = normalize(input.Nrm);
 	payload.IsInside = dot(payload.Normal, WorldRayDirection()) > THRESHOLD;
+	//payload.IsInside = HitKind() == HIT_KIND_TRIANGLE_BACK_FACE;
 }
 
 //--------------------------------------------------------------------------------------
@@ -144,5 +145,4 @@ void closestHitMain(inout RayPayload payload, TriAttributes attr)
 [shader("miss")]
 void missMain(inout RayPayload payload)
 {
-	payload.IsInside = false;
 }
