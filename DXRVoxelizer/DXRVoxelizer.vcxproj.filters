@@ -49,6 +49,15 @@
     <Filter Include="XUSG\Core\Source Files\Inc">
       <UniqueIdentifier>{1ef05994-a2cf-495a-acbd-f52e610a2628}</UniqueIdentifier>
     </Filter>
+    <Filter Include="XUSG\Optional">
+      <UniqueIdentifier>{da357f3d-d9e8-4f2c-8605-1154608b49d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="XUSG\Optional\Source Files">
+      <UniqueIdentifier>{1ff17826-f056-4881-89cc-bce45bb5efac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="XUSG\Optional\Header Files">
+      <UniqueIdentifier>{21ba54c7-4b07-4b2b-823a-d5960c045acd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="XUSG\Core\XUSG.h">
@@ -117,9 +126,6 @@
     <ClInclude Include="Common\Win32Application.h">
       <Filter>Common\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Content\ObjLoader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Voxelizer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -134,6 +140,9 @@
     </ClInclude>
     <ClInclude Include="Common\dxcapi.h">
       <Filter>Common\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="XUSG\Optional\XUSGObjLoader.h">
+      <Filter>XUSG\Optional\Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -188,9 +197,6 @@
     <ClCompile Include="Common\Win32Application.cpp">
       <Filter>Common\Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Content\ObjLoader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Voxelizer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -199,6 +205,9 @@
     </ClCompile>
     <ClCompile Include="XUSG\Core\XUSGReflector.cpp">
       <Filter>XUSG\Core\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="XUSG\Optional\XUSGObjLoader.cpp">
+      <Filter>XUSG\Optional\Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

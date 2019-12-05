@@ -2,7 +2,7 @@
 // By Stars XU Tianchen
 //--------------------------------------------------------------------------------------
 
-#include "ObjLoader.h"
+#include "Optional/XUSGObjLoader.h"
 #include "Voxelizer.h"
 
 #define GRID_SIZE			64
