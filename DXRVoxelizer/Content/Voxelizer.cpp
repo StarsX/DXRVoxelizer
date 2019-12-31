@@ -117,9 +117,8 @@ bool Voxelizer::createVB(const RayTracing::CommandList& commandList, uint32_t nu
 		ResourceFlag::NONE, MemoryType::DEFAULT), false);
 	uploaders.push_back(nullptr);
 
-	return m_vertexBuffer.Upload(commandList, uploaders.back(),
-		ResourceState::NON_PIXEL_SHADER_RESOURCE,
-		pData, stride * numVert);
+	return m_vertexBuffer.Upload(commandList, uploaders.back(), pData,
+		stride * numVert, 0, ResourceState::NON_PIXEL_SHADER_RESOURCE);
 }
 
 bool Voxelizer::createIB(const RayTracing::CommandList& commandList, uint32_t numIndices,
@@ -130,8 +129,8 @@ bool Voxelizer::createIB(const RayTracing::CommandList& commandList, uint32_t nu
 		ResourceFlag::NONE, MemoryType::DEFAULT), false);
 	uploaders.push_back(nullptr);
 
-	return m_indexBuffer.Upload(commandList, uploaders.back(),
-		ResourceState::NON_PIXEL_SHADER_RESOURCE, pData, byteWidth);
+	return m_indexBuffer.Upload(commandList, uploaders.back(), pData,
+		byteWidth, 0, ResourceState::NON_PIXEL_SHADER_RESOURCE);
 }
 
 bool Voxelizer::createCB()
