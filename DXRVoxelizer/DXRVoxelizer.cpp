@@ -68,6 +68,7 @@ void DXRVoxelizer::LoadPipeline()
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 		{
 			debugController->EnableDebugLayer();
+			//debugController->SetEnableGPUBasedValidation(TRUE);
 
 			// Enable additional debug layers.
 			dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
