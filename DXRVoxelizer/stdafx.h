@@ -48,3 +48,5 @@
 #define new DBG_NEW
 #endif
 #endif  // _DEBUG
+
+#define ENABLE_DXR_FALLBACK	1

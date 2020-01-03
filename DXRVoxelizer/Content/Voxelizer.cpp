@@ -28,6 +28,8 @@ Voxelizer::Voxelizer(const RayTracing::Device& device) :
 	m_pipelineLayoutCache.SetDevice(device.Common);
 
 	m_descriptorTableCache.SetName(L"RayTracerDescriptorTableCache");
+
+	AccelerationStructure::SetUAVCount(2);
 }
 
 Voxelizer::~Voxelizer()
@@ -148,20 +150,10 @@ bool Voxelizer::createPipelineLayouts()
 		pipelineLayout.SetRootSRV(ACCELERATION_STRUCTURE, 0);
 		pipelineLayout.SetRange(INDEX_BUFFERS, DescriptorType::SRV, 1, 0, 1);
 		pipelineLayout.SetRange(VERTEX_BUFFERS, DescriptorType::SRV, 1, 0, 2);
-		X_RETURN(m_pipelineLayouts[GLOBAL_LAYOUT], pipelineLayout.GetPipelineLayout(m_device, m_pipelineLayoutCache,
-			PipelineLayoutFlag::NONE, NumUAVs, L"RayTracerGlobalPipelineLayout"), false);
+		X_RETURN(m_pipelineLayouts[GLOBAL_LAYOUT], pipelineLayout.GetPipelineLayout(
+			m_device, m_pipelineLayoutCache, PipelineLayoutFlag::NONE,
+			L"RayTracerGlobalPipelineLayout"), false);
 	}
-
-	// Local pipeline layout for RayGen shader
-	// This is a pipeline layout that enables a shader to have unique arguments that come from shader tables.
-#if 0
-	{
-		RayTracing::PipelineLayout pipelineLayout;
-		pipelineLayout.SetConstants(0, SizeOfInUint32(XMFLOAT4), 0);
-		X_RETURN(m_pipelineLayouts[RAY_GEN_LAYOUT], pipelineLayout.GetPipelineLayout(m_device, m_pipelineLayoutCache,
-			PipelineLayoutFlag::LOCAL_PIPELINE_LAYOUT, NumUAVs, L"RayTracerRayGenPipelineLayout"), false);
-	}
-#endif
 
 	{
 		// Get pipeline layout
@@ -289,9 +281,8 @@ bool Voxelizer::buildAccelerationStructures(const RayTracing::CommandList& comma
 	const uint32_t topLevelASIndex = bottomLevelASIndex + 1;
 
 	// Prebuild
-	N_RETURN(m_bottomLevelAS.PreBuild(m_device, 1, geometries,
-		bottomLevelASIndex, NumUAVs), false);
-	N_RETURN(m_topLevelAS.PreBuild(m_device, 1, topLevelASIndex, NumUAVs), false);
+	N_RETURN(m_bottomLevelAS.PreBuild(m_device, 1, geometries, bottomLevelASIndex), false);
+	N_RETURN(m_topLevelAS.PreBuild(m_device, 1, topLevelASIndex), false);
 
 	// Create scratch buffer
 	auto scratchSize = m_topLevelAS.GetScratchDataMaxSize();
@@ -310,10 +301,10 @@ bool Voxelizer::buildAccelerationStructures(const RayTracing::CommandList& comma
 	TopLevelAS::SetInstances(m_device, m_instances, 1, &m_bottomLevelAS, pTransform);
 
 	// Build bottom level ASs
-	m_bottomLevelAS.Build(commandList, m_scratch, descriptorPool, NumUAVs);
+	m_bottomLevelAS.Build(commandList, m_scratch, descriptorPool);
 
 	// Build top level AS
-	m_topLevelAS.Build(commandList, m_scratch, m_instances, descriptorPool, NumUAVs);
+	m_topLevelAS.Build(commandList, m_scratch, m_instances, descriptorPool);
 
 	return true;
 }
