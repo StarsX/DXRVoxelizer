@@ -62,11 +62,11 @@ private:
 
 	// App resources.
 	std::unique_ptr<Voxelizer> m_voxelizer;
-	XUSG::DepthStencil		m_depth;
-	DirectX::XMFLOAT4X4		m_proj;
-	DirectX::XMFLOAT4X4		m_view;
-	DirectX::XMFLOAT3		m_focusPt;
-	DirectX::XMFLOAT3		m_eyePt;
+	XUSG::DepthStencil	m_depth;
+	DirectX::XMFLOAT4X4	m_proj;
+	DirectX::XMFLOAT4X4	m_view;
+	DirectX::XMFLOAT3	m_focusPt;
+	DirectX::XMFLOAT3	m_eyePt;
 
 	// Synchronization objects.
 	uint32_t	m_frameIndex;
