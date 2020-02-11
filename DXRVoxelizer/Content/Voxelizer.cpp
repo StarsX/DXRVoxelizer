@@ -175,10 +175,10 @@ bool Voxelizer::createPipelines(Format rtFormat, Format dsFormat)
 {
 	{
 		Blob shaderLib;
-		V_RETURN(D3DReadFileToBlob(L"DXRVoxelizer.cso", &shaderLib), cerr, false);
+		N_RETURN(m_shaderPool.CreateShader(Shader::Stage::CS, 0, L"DXRVoxelizer.cso"), false);
 
 		RayTracing::State state;
-		state.SetShaderLibrary(shaderLib);
+		state.SetShaderLibrary(m_shaderPool.GetShader(Shader::Stage::CS, 0));
 		state.SetHitGroup(0, HitGroupName, ClosestHitShaderName);
 		state.SetShaderConfig(sizeof(XMFLOAT4), sizeof(XMFLOAT2));
 		//state.SetLocalPipelineLayout(0, m_pipelineLayouts[RAY_GEN_LAYOUT],
