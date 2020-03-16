@@ -277,8 +277,8 @@ bool Voxelizer::buildAccelerationStructures(const RayTracing::CommandList& comma
 		&m_vertexBuffer.GetVBV(), &m_indexBuffer.GetIBV());
 
 	// Descriptor index in descriptor pool
-	const uint32_t bottomLevelASIndex = 0;
-	const uint32_t topLevelASIndex = bottomLevelASIndex + 1;
+	const auto bottomLevelASIndex = 0u;
+	const auto topLevelASIndex = bottomLevelASIndex + 1;
 
 	// Prebuild
 	N_RETURN(m_bottomLevelAS.PreBuild(m_device, 1, geometries, bottomLevelASIndex), false);
