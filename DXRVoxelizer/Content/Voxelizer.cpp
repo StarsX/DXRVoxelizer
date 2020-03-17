@@ -273,7 +273,7 @@ bool Voxelizer::buildAccelerationStructures(const RayTracing::CommandList& comma
 	AccelerationStructure::SetFrameCount(FrameCount);
 
 	// Set geometries
-	BottomLevelAS::SetGeometries(geometries, 1, Format::R32G32B32_FLOAT,
+	BottomLevelAS::SetTriangleGeometries(geometries, 1, Format::R32G32B32_FLOAT,
 		&m_vertexBuffer.GetVBV(), &m_indexBuffer.GetIBV());
 
 	// Descriptor index in descriptor pool
