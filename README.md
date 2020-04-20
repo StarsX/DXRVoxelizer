@@ -10,3 +10,5 @@ Real-time solid voxelization using DXR ray-tracing pipeline and shaders directly
 Hot keys:
 
 [F1] show/hide FPS
+
+Prerequisite: https://github.com/StarsX/XUSG
