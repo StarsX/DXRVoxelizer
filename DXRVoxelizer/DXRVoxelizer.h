@@ -57,12 +57,12 @@ private:
 	bool m_isDxrSupported;
 
 	XUSG::RayTracing::Device m_device;
-	XUSG::RenderTarget m_renderTargets[FrameCount];
-	XUSG::RayTracing::CommandList m_commandList;
+	XUSG::RenderTarget::uptr m_renderTargets[FrameCount];
+	XUSG::RayTracing::CommandList::uptr m_commandList;
 
 	// App resources.
-	std::unique_ptr<Voxelizer> m_voxelizer;
-	XUSG::DepthStencil	m_depth;
+	std::unique_ptr<Voxelizer>	m_voxelizer;
+	XUSG::DepthStencil::uptr	m_depth;
 	DirectX::XMFLOAT4X4	m_proj;
 	DirectX::XMFLOAT4X4	m_view;
 	DirectX::XMFLOAT3	m_focusPt;

@@ -76,16 +76,19 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Content;$(ProjectDir)Common;$(ProjectDir)XUSG;$(ProjectDir)../D3D12RaytracingFallback/Include/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Content;$(ProjectDir)Common;$(ProjectDir)XUSG</AdditionalIncludeDirectories>
     </ClCompile>
     <PostBuildEvent>
       <Command>COPY /Y "$(OutDir)*.cso" "$(ProjectDir)..\Bin\"
+
 COPY /Y "$(OutDir)*.exe" "$(ProjectDir)..\Bin\"
-cd "$(SolutionDir)tools\x64\"
-PostbuildCopy.bat "$(ProjectDir)..\Bin\"</Command>
+
+COPY /Y "$(ProjectDir)XUSG\$(Platform)\$(Configuration)\*.dll" "$(ProjectDir)..\Bin\"
+</Command>
     </PostBuildEvent>
     <Link>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;$(SolutionDir)Packages\WinPixEventRuntime.1.0.180612001\bin\WinPixEventRuntime.lib;$(SolutionDir)Build_VS15\$(Platform)\$(Configuration)\Output\FallbackLayer\FallbackLayer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;WinPixEventRuntime.lib;FallbackLayer.lib;XUSG.lib;XUSGDXRFallback.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)XUSG\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <FxCompile>
       <AdditionalIncludeDirectories>$(ProjectDir)Content\Shaders;$(ProjectDir)Content;$(ProjectDir)XUSG\Shaders;$(ProjectDir)XUSG;$(ProjectDir)</AdditionalIncludeDirectories>
@@ -97,19 +100,22 @@ PostbuildCopy.bat "$(ProjectDir)..\Bin\"</Command>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Content;$(ProjectDir)Common;$(ProjectDir)XUSG;$(ProjectDir)../D3D12RaytracingFallback/Include/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Content;$(ProjectDir)Common;$(ProjectDir)XUSG</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <PostBuildEvent>
       <Command>COPY /Y "$(OutDir)*.cso" "$(ProjectDir)..\Bin\"
+
 COPY /Y "$(OutDir)*.exe" "$(ProjectDir)..\Bin\"
-cd "$(SolutionDir)tools\x64\"
-PostbuildCopy.bat "$(ProjectDir)..\Bin\"</Command>
+
+COPY /Y "$(ProjectDir)XUSG\$(Platform)\$(Configuration)\*.dll" "$(ProjectDir)..\Bin\"
+</Command>
     </PostBuildEvent>
     <Link>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;$(SolutionDir)Packages\WinPixEventRuntime.1.0.180612001\bin\WinPixEventRuntime.lib;$(SolutionDir)Build_VS15\$(Platform)\$(Configuration)\Output\FallbackLayer\FallbackLayer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;WinPixEventRuntime.lib;FallbackLayer.lib;XUSG.lib;XUSGDXRFallback.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)XUSG\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <FxCompile>
       <AdditionalIncludeDirectories>$(ProjectDir)Content\Shaders;$(ProjectDir)Content;$(ProjectDir)XUSG\Shaders;$(ProjectDir)XUSG;$(ProjectDir)</AdditionalIncludeDirectories>
@@ -124,18 +130,21 @@ PostbuildCopy.bat "$(ProjectDir)..\Bin\"</Command>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Content;$(ProjectDir)Common;$(ProjectDir)XUSG;$(ProjectDir)../D3D12RaytracingFallback/Include/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Content;$(ProjectDir)Common;$(ProjectDir)XUSG</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;$(SolutionDir)Packages\WinPixEventRuntime.1.0.180612001\bin\WinPixEventRuntime.lib;$(SolutionDir)Build_VS15\$(Platform)\$(Configuration)\Output\FallbackLayer\FallbackLayer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;WinPixEventRuntime.lib;FallbackLayer.lib;XUSG.lib;XUSGDXRFallback.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)XUSG\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>COPY /Y "$(OutDir)*.cso" "$(ProjectDir)..\Bin\"
+
 COPY /Y "$(OutDir)*.exe" "$(ProjectDir)..\Bin\"
-cd "$(SolutionDir)tools\x64\"
-PostbuildCopy.bat "$(ProjectDir)..\Bin\"</Command>
+
+COPY /Y "$(ProjectDir)XUSG\$(Platform)\$(Configuration)\*.dll" "$(ProjectDir)..\Bin\"
+</Command>
     </PostBuildEvent>
     <FxCompile>
       <AdditionalIncludeDirectories>$(ProjectDir)Content\Shaders;$(ProjectDir)Content;$(ProjectDir)XUSG\Shaders;$(ProjectDir)XUSG;$(ProjectDir)</AdditionalIncludeDirectories>
@@ -149,7 +158,7 @@ PostbuildCopy.bat "$(ProjectDir)..\Bin\"</Command>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Content;$(ProjectDir)Common;$(ProjectDir)XUSG;$(ProjectDir)../D3D12RaytracingFallback/Include/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Content;$(ProjectDir)Common;$(ProjectDir)XUSG</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
       <ConformanceMode>true</ConformanceMode>
@@ -157,21 +166,27 @@ PostbuildCopy.bat "$(ProjectDir)..\Bin\"</Command>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;$(SolutionDir)Packages\WinPixEventRuntime.1.0.180612001\bin\WinPixEventRuntime.lib;$(SolutionDir)Build_VS15\$(Platform)\$(Configuration)\Output\FallbackLayer\FallbackLayer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;WinPixEventRuntime.lib;FallbackLayer.lib;XUSG.lib;XUSGDXRFallback.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)XUSG\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>COPY /Y "$(OutDir)*.cso" "$(ProjectDir)..\Bin\"
+
 COPY /Y "$(OutDir)*.exe" "$(ProjectDir)..\Bin\"
-cd "$(SolutionDir)tools\x64\"
-PostbuildCopy.bat "$(ProjectDir)..\Bin\"</Command>
+
+COPY /Y "$(ProjectDir)XUSG\$(Platform)\$(Configuration)\*.dll" "$(ProjectDir)..\Bin\"
+</Command>
     </PostBuildEvent>
     <FxCompile>
       <AdditionalIncludeDirectories>$(ProjectDir)Content\Shaders;$(ProjectDir)Content;$(ProjectDir)XUSG\Shaders;$(ProjectDir)XUSG;$(ProjectDir)</AdditionalIncludeDirectories>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Common\D3D12RaytracingFallback.h" />
+    <ClInclude Include="Common\D3D12RaytracingHelpers.hpp" />
+    <ClInclude Include="Common\d3d12video.h" />
+    <ClInclude Include="Common\d3d12_1.h" />
     <ClInclude Include="Common\d3dx12.h" />
-    <ClInclude Include="Common\dxcapi.h" />
     <ClInclude Include="Common\DXFramework.h" />
     <ClInclude Include="Common\DXFrameworkHelper.h" />
     <ClInclude Include="Common\StepTimer.h" />
@@ -181,23 +196,10 @@ PostbuildCopy.bat "$(ProjectDir)..\Bin\"</Command>
     <ClInclude Include="DXRVoxelizer.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="XUSG\Core\XUSG.h" />
-    <ClInclude Include="XUSG\Core\XUSGCommand.h" />
-    <ClInclude Include="XUSG\Core\XUSGComputeState.h" />
-    <ClInclude Include="XUSG\Core\XUSGDescriptor.h" />
-    <ClInclude Include="XUSG\Core\XUSGGraphicsState.h" />
-    <ClInclude Include="XUSG\Core\XUSGInputLayout.h" />
-    <ClInclude Include="XUSG\Core\XUSGPipelineLayout.h" />
-    <ClInclude Include="XUSG\Core\XUSGReflector.h" />
-    <ClInclude Include="XUSG\Core\XUSGResource.h" />
-    <ClInclude Include="XUSG\Core\XUSGShader.h" />
-    <ClInclude Include="XUSG\Core\XUSGType.h" />
+    <ClInclude Include="XUSG\Core\XUSG_DX12.h" />
     <ClInclude Include="XUSG\Optional\XUSGObjLoader.h" />
-    <ClInclude Include="XUSG\RayTracing\XUSGAccelerationStructure.h" />
     <ClInclude Include="XUSG\RayTracing\XUSGRayTracing.h" />
-    <ClInclude Include="XUSG\RayTracing\XUSGRayTracingPipelineLayout.h" />
-    <ClInclude Include="XUSG\RayTracing\XUSGRayTracingState.h" />
-    <ClInclude Include="XUSG\RayTracing\XUSGRayTracingType.h" />
-    <ClInclude Include="XUSG\RayTracing\XUSGShaderTable.h" />
+    <ClInclude Include="XUSG\RayTracing\XUSGRayTracing_DX12.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Common\DXFramework.cpp">
@@ -236,102 +238,12 @@ PostbuildCopy.bat "$(ProjectDir)..\Bin\"</Command>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="XUSG\Core\XUSGCommand.cpp">
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdafx.h</ForcedIncludeFiles>
-    </ClCompile>
-    <ClCompile Include="XUSG\Core\XUSGComputeState.cpp">
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdafx.h</ForcedIncludeFiles>
-    </ClCompile>
-    <ClCompile Include="XUSG\Core\XUSGDescriptor.cpp">
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdafx.h</ForcedIncludeFiles>
-    </ClCompile>
-    <ClCompile Include="XUSG\Core\XUSGGraphicsState.cpp">
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdafx.h</ForcedIncludeFiles>
-    </ClCompile>
-    <ClCompile Include="XUSG\Core\XUSGInputLayout.cpp">
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdafx.h</ForcedIncludeFiles>
-    </ClCompile>
-    <ClCompile Include="XUSG\Core\XUSGPipelineLayout.cpp">
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdafx.h</ForcedIncludeFiles>
-    </ClCompile>
-    <ClCompile Include="XUSG\Core\XUSGReflector.cpp">
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdafx.h</ForcedIncludeFiles>
-    </ClCompile>
-    <ClCompile Include="XUSG\Core\XUSGResource.cpp">
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdafx.h</ForcedIncludeFiles>
-    </ClCompile>
-    <ClCompile Include="XUSG\Core\XUSGShader.cpp">
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdafx.h</ForcedIncludeFiles>
-    </ClCompile>
     <ClCompile Include="XUSG\Optional\XUSGObjLoader.cpp">
       <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</ForcedIncludeFiles>
       <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</ForcedIncludeFiles>
       <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdafx.h</ForcedIncludeFiles>
       <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdafx.h</ForcedIncludeFiles>
     </ClCompile>
-    <ClCompile Include="XUSG\RayTracing\XUSGAccelerationStructure.cpp">
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdafx.h</ForcedIncludeFiles>
-    </ClCompile>
-    <ClCompile Include="XUSG\RayTracing\XUSGRayTracing.cpp">
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdafx.h</ForcedIncludeFiles>
-    </ClCompile>
-    <ClCompile Include="XUSG\RayTracing\XUSGRayTracingPipelineLayout.cpp">
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdafx.h</ForcedIncludeFiles>
-    </ClCompile>
-    <ClCompile Include="XUSG\RayTracing\XUSGRayTracingState.cpp">
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdafx.h</ForcedIncludeFiles>
-    </ClCompile>
-    <ClCompile Include="XUSG\RayTracing\XUSGShaderTable.cpp">
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdafx.h</ForcedIncludeFiles>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="XUSG\Core\XUSGBlend.inl" />
-    <None Include="XUSG\Core\XUSGDepthStencil.inl" />
-    <None Include="XUSG\Core\XUSGRasterizer.inl" />
-    <None Include="XUSG\Core\XUSGSampler.inl" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Content\Shaders\DXRVoxelizer.hlsl">

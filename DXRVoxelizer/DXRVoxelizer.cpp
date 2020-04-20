@@ -96,7 +96,7 @@ void DXRVoxelizer::LoadPipeline()
 	ThrowIfFailed(hr);
 
 	// Create the command queue.
-	N_RETURN(m_device.Common->GetCommandQueue(m_commandQueue, CommandListType::DIRECT, CommandQueueFlags::NONE), ThrowIfFailed(E_FAIL));
+	N_RETURN(m_device.Common->GetCommandQueue(m_commandQueue, CommandListType::DIRECT, CommandQueueFlag::NONE), ThrowIfFailed(E_FAIL));
 
 	// Describe and create the swap chain.
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
@@ -128,12 +128,14 @@ void DXRVoxelizer::LoadPipeline()
 	// Create a RTV and a command allocator for each frame.
 	for (auto n = 0u; n < FrameCount; ++n)
 	{
-		N_RETURN(m_renderTargets[n].CreateFromSwapChain(m_device.Common, m_swapChain, n), ThrowIfFailed(E_FAIL));
+		m_renderTargets[n] = RenderTarget::MakeUnique();
+		N_RETURN(m_renderTargets[n]->CreateFromSwapChain(m_device.Common, m_swapChain, n), ThrowIfFailed(E_FAIL));
 		N_RETURN(m_device.Common->GetCommandAllocator(m_commandAllocators[n], CommandListType::DIRECT), ThrowIfFailed(E_FAIL));
 	}
 
 	// Create a DSV
-	N_RETURN(m_depth.Create(m_device.Common, m_width, m_height, Format::D24_UNORM_S8_UINT,
+	m_depth = DepthStencil::MakeUnique();
+	N_RETURN(m_depth->Create(m_device.Common, m_width, m_height, Format::D24_UNORM_S8_UINT,
 		ResourceFlag::DENY_SHADER_RESOURCE), ThrowIfFailed(E_FAIL));
 }
 
@@ -141,7 +143,9 @@ void DXRVoxelizer::LoadPipeline()
 void DXRVoxelizer::LoadAssets()
 {
 	// Create the command list.
-	N_RETURN(m_device.Common->GetCommandList(m_commandList.GetCommandList(), 0, CommandListType::DIRECT,
+	m_commandList = RayTracing::CommandList::MakeUnique();
+	const auto pCommandList = m_commandList.get();
+	N_RETURN(m_device.Common->GetCommandList(pCommandList, 0, CommandListType::DIRECT,
 		m_commandAllocators[m_frameIndex], nullptr), ThrowIfFailed(E_FAIL));
 
 	// Create ray tracing interfaces
@@ -152,14 +156,13 @@ void DXRVoxelizer::LoadAssets()
 
 	vector<Resource> uploaders(0);
 	Geometry geometry;
-	if (!m_voxelizer->Init(m_commandList, m_width, m_height, static_cast<Format>(m_renderTargets[0].GetResource()->GetDesc().Format),
-		static_cast<Format>(m_depth.GetResource()->GetDesc().Format), uploaders, geometry, m_meshFileName.c_str(),
+	if (!m_voxelizer->Init(pCommandList, m_width, m_height, static_cast<Format>(m_renderTargets[0]->GetResource()->GetDesc().Format),
+		static_cast<Format>(m_depth->GetResource()->GetDesc().Format), uploaders, geometry, m_meshFileName.c_str(),
 		m_meshPosScale)) ThrowIfFailed(E_FAIL);
 
 	// Close the command list and execute it to begin the initial GPU setup.
-	ThrowIfFailed(m_commandList.Close());
-	BaseCommandList* const ppCommandLists[] = { m_commandList.GetCommandList().get() };
-	m_commandQueue->ExecuteCommandLists(static_cast<uint32_t>(size(ppCommandLists)), ppCommandLists);
+	ThrowIfFailed(pCommandList->Close());
+	m_commandQueue->SubmitCommandList(pCommandList);
 
 	// Create synchronization objects and wait until assets have been uploaded to the GPU.
 	{
@@ -218,8 +221,7 @@ void DXRVoxelizer::OnRender()
 	PopulateCommandList();
 
 	// Execute the command list.
-	BaseCommandList* const ppCommandLists[] = { m_commandList.GetCommandList().get() };
-	m_commandQueue->ExecuteCommandLists(static_cast<uint32_t>(size(ppCommandLists)), ppCommandLists);
+	m_commandQueue->SubmitCommandList(m_commandList.get());
 
 	// Present the frame.
 	ThrowIfFailed(m_swapChain->Present(0, 0));
@@ -342,25 +344,26 @@ void DXRVoxelizer::PopulateCommandList()
 	// However, when ExecuteCommandList() is called on a particular command 
 	// list, that command list can then be reset at any time and must be before 
 	// re-recording.
-	ThrowIfFailed(m_commandList.Reset(m_commandAllocators[m_frameIndex].get(), nullptr));
+	const auto pCommandList = m_commandList.get();
+	ThrowIfFailed(pCommandList->Reset(m_commandAllocators[m_frameIndex].get(), nullptr));
 
 	ResourceBarrier barrier;
-	auto numBarriers = m_renderTargets[m_frameIndex].SetBarrier(&barrier, ResourceState::RENDER_TARGET);
-	m_commandList.Barrier(numBarriers, &barrier);
+	auto numBarriers = m_renderTargets[m_frameIndex]->SetBarrier(&barrier, ResourceState::RENDER_TARGET);
+	pCommandList->Barrier(numBarriers, &barrier);
 
 	// Record commands.
 	//const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
 	//m_commandList.ClearRenderTargetView(*m_rtvTables[m_frameIndex], clearColor);
-	m_commandList.ClearDepthStencilView(m_depth.GetDSV(), ClearFlag::DEPTH, 1.0f);
+	pCommandList->ClearDepthStencilView(m_depth->GetDSV(), ClearFlag::DEPTH, 1.0f);
 
 	// Voxelizer rendering
-	m_voxelizer->Render(m_commandList, m_frameIndex, m_renderTargets[m_frameIndex].GetRTV(), m_depth.GetDSV());
+	m_voxelizer->Render(pCommandList, m_frameIndex, m_renderTargets[m_frameIndex]->GetRTV(), m_depth->GetDSV());
 
 	// Indicate that the back buffer will now be used to present.
-	numBarriers = m_renderTargets[m_frameIndex].SetBarrier(&barrier, ResourceState::PRESENT);
-	m_commandList.Barrier(numBarriers, &barrier);
+	numBarriers = m_renderTargets[m_frameIndex]->SetBarrier(&barrier, ResourceState::PRESENT);
+	pCommandList->Barrier(numBarriers, &barrier);
 
-	ThrowIfFailed(m_commandList.Close());
+	ThrowIfFailed(m_commandList->Close());
 }
 
 // Wait for pending GPU work to complete.
@@ -493,5 +496,5 @@ void DXRVoxelizer::CreateRaytracingInterfaces()
 		ThrowIfFailed(hr);
 	}
 
-	m_commandList.CreateRaytracingInterfaces(m_device);
+	m_commandList->CreateRaytracingInterfaces(m_device);
 }
