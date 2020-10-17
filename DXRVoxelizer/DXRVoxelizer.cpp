@@ -496,5 +496,5 @@ void DXRVoxelizer::CreateRaytracingInterfaces()
 		ThrowIfFailed(hr);
 	}
 
-	m_commandList->CreateRaytracingInterfaces(m_device);
+	m_commandList->CreateInterface(m_device);
 }
