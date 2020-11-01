@@ -121,7 +121,7 @@ void DXRVoxelizer::LoadPipeline()
 	// This sample does not support fullscreen transitions.
 	ThrowIfFailed(factory->MakeWindowAssociation(Win32Application::GetHwnd(), DXGI_MWA_NO_ALT_ENTER));
 
-	ThrowIfFailed(swapChain.As(&m_swapChain));
+	ThrowIfFailed(swapChain->QueryInterface(IID_PPV_ARGS(&m_swapChain)));
 	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
 
 	// Create frame resources.
