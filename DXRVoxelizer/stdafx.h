@@ -30,13 +30,17 @@
 
 #include <iostream>
 #include <sstream>
-#include <codecvt>
 #include <iomanip>
 
+#if _HAS_CXX17
+#include <winrt/base.h>
+#else
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <map>
 #include <unordered_map>
+#endif
 #include <functional>
 #include <wrl.h>
 #include <shellapi.h>
