@@ -23,10 +23,10 @@ Voxelizer::Voxelizer(const RayTracing::Device& device) :
 {
 	m_shaderPool = ShaderPool::MakeUnique();
 	m_rayTracingPipelineCache = RayTracing::PipelineCache::MakeUnique(device);
-	m_graphicsPipelineCache = Graphics::PipelineCache::MakeUnique(device.Common);
-	m_computePipelineCache = Compute::PipelineCache::MakeUnique(device.Common);
-	m_pipelineLayoutCache = PipelineLayoutCache::MakeUnique(device.Common);
-	m_descriptorTableCache = DescriptorTableCache::MakeUnique(device.Common, L"RayTracerDescriptorTableCache");
+	m_graphicsPipelineCache = Graphics::PipelineCache::MakeUnique(device.Base);
+	m_computePipelineCache = Compute::PipelineCache::MakeUnique(device.Base);
+	m_pipelineLayoutCache = PipelineLayoutCache::MakeUnique(device.Base);
+	m_descriptorTableCache = DescriptorTableCache::MakeUnique(device.Base, L"RayTracerDescriptorTableCache");
 
 	AccelerationStructure::SetUAVCount(2);
 }
@@ -63,12 +63,12 @@ bool Voxelizer::Init(RayTracing::CommandList* pCommandList, uint32_t width, uint
 	for (auto& grid : m_grids)
 	{
 		grid = Texture3D::MakeUnique();
-		N_RETURN(grid->Create(m_device.Common, GRID_SIZE, GRID_SIZE, GRID_SIZE, Format::R10G10B10A2_UNORM,
+		N_RETURN(grid->Create(m_device.Base, GRID_SIZE, GRID_SIZE, GRID_SIZE, Format::R10G10B10A2_UNORM,
 			ResourceFlag::ALLOW_UNORDERED_ACCESS), false);
 	}
 
 	//m_depth = DepthStencil::MakeUnique();
-	//m_depth.Create(m_device.Common, width, height, Format::D24_UNORM_S8_UINT, ResourceFlag::DENY_SHADER_RESOURCE);
+	//m_depth.Create(m_device.Base, width, height, Format::D24_UNORM_S8_UINT, ResourceFlag::DENY_SHADER_RESOURCE);
 	N_RETURN(buildAccelerationStructures(pCommandList, &geometry), false);
 	N_RETURN(buildShaderTables(), false);
 
@@ -120,7 +120,7 @@ bool Voxelizer::createVB(RayTracing::CommandList* pCommandList, uint32_t numVert
 	uint32_t stride, const uint8_t* pData, vector<Resource>& uploaders)
 {
 	m_vertexBuffer = VertexBuffer::MakeUnique();
-	N_RETURN(m_vertexBuffer->Create(m_device.Common, numVert, stride,
+	N_RETURN(m_vertexBuffer->Create(m_device.Base, numVert, stride,
 		ResourceFlag::NONE, MemoryType::DEFAULT), false);
 	uploaders.push_back(nullptr);
 
@@ -133,7 +133,7 @@ bool Voxelizer::createIB(RayTracing::CommandList* pCommandList, uint32_t numIndi
 {
 	const uint32_t byteWidth = sizeof(uint32_t) * numIndices;
 	m_indexBuffer = IndexBuffer::MakeUnique();
-	N_RETURN(m_indexBuffer->Create(m_device.Common, byteWidth, Format::R32_UINT,
+	N_RETURN(m_indexBuffer->Create(m_device.Base, byteWidth, Format::R32_UINT,
 		ResourceFlag::NONE, MemoryType::DEFAULT), false);
 	uploaders.push_back(nullptr);
 
@@ -145,7 +145,7 @@ bool Voxelizer::createCB()
 {
 	m_cbPerObject = ConstantBuffer::MakeUnique();
 
-	return m_cbPerObject->Create(m_device.Common, sizeof(CBPerObject) * FrameCount, FrameCount);
+	return m_cbPerObject->Create(m_device.Base, sizeof(CBPerObject) * FrameCount, FrameCount);
 }
 
 bool Voxelizer::createPipelineLayouts()
@@ -192,9 +192,7 @@ bool Voxelizer::createPipelines(Format rtFormat, Format dsFormat)
 			//1, reinterpret_cast<const void**>(&RaygenShaderName));
 		state->SetGlobalPipelineLayout(m_pipelineLayouts[GLOBAL_LAYOUT]);
 		state->SetMaxRecursionDepth(1);
-		m_rayTracingPipeline = state->GetPipeline(*m_rayTracingPipelineCache, L"Raytracing");
-
-		N_RETURN(m_rayTracingPipeline.Native || m_rayTracingPipeline.Fallback, false);
+		X_RETURN(m_rayTracingPipeline, state->GetPipeline(*m_rayTracingPipelineCache, L"Raytracing"), false);
 	}
 
 	{
