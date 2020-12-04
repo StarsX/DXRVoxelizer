@@ -129,13 +129,13 @@ void DXRVoxelizer::LoadPipeline()
 	for (auto n = 0u; n < FrameCount; ++n)
 	{
 		m_renderTargets[n] = RenderTarget::MakeUnique();
-		N_RETURN(m_renderTargets[n]->CreateFromSwapChain(m_device.Base, m_swapChain, n), ThrowIfFailed(E_FAIL));
+		N_RETURN(m_renderTargets[n]->CreateFromSwapChain(m_device, m_swapChain, n), ThrowIfFailed(E_FAIL));
 		N_RETURN(m_device.Base->GetCommandAllocator(m_commandAllocators[n], CommandListType::DIRECT), ThrowIfFailed(E_FAIL));
 	}
 
 	// Create a DSV
 	m_depth = DepthStencil::MakeUnique();
-	N_RETURN(m_depth->Create(m_device.Base, m_width, m_height, Format::D24_UNORM_S8_UINT,
+	N_RETURN(m_depth->Create(m_device, m_width, m_height, Format::D24_UNORM_S8_UINT,
 		ResourceFlag::DENY_SHADER_RESOURCE), ThrowIfFailed(E_FAIL));
 }
 
@@ -486,5 +486,5 @@ void DXRVoxelizer::CreateRaytracingInterfaces()
 {
 	const auto createDeviceFlags = EnableRootDescriptorsInShaderRecords;
 	ThrowIfFailed(D3D12CreateRaytracingFallbackDevice(m_device.Base.get(), createDeviceFlags, 0, IID_PPV_ARGS(&m_device.Derived)));
-	m_commandList->CreateInterface(m_device);
+	N_RETURN(m_commandList->CreateInterface(m_device), ThrowIfFailed(E_FAIL));
 }

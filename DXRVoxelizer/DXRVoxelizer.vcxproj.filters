@@ -112,14 +112,14 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Content\Shaders\DXRVoxelizer.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Content\Shaders\PSRayCast.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\Shaders\VSScreenQuad.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="Content\Shaders\DXRVoxelizer.hlsl" />
   </ItemGroup>
 </Project>

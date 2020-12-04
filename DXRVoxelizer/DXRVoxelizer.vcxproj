@@ -85,7 +85,7 @@ COPY /Y "$(ProjectDir)XUSG\$(Platform)\$(Configuration)\*.dll" "$(ProjectDir)..\
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;WinPixEventRuntime.lib;FallbackLayer.lib;XUSG.lib;XUSGDXRFallback.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;FallbackLayer.lib;XUSG.lib;XUSGDXRFallback.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)XUSG\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
