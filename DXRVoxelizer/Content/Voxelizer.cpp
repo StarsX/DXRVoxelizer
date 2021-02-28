@@ -155,7 +155,7 @@ bool Voxelizer::createPipelineLayouts()
 	{
 		const auto pipelineLayout = RayTracing::PipelineLayout ::MakeUnique();
 		pipelineLayout->SetRange(OUTPUT_GRID, DescriptorType::UAV, 1, 0);
-		pipelineLayout->SetRootSRV(ACCELERATION_STRUCTURE, 0);
+		pipelineLayout->SetRootSRV(ACCELERATION_STRUCTURE, 0, 0, DescriptorFlag::DATA_STATIC);
 		pipelineLayout->SetRange(INDEX_BUFFERS, DescriptorType::SRV, 1, 0, 1);
 		pipelineLayout->SetRange(VERTEX_BUFFERS, DescriptorType::SRV, 1, 0, 2);
 		X_RETURN(m_pipelineLayouts[GLOBAL_LAYOUT], pipelineLayout->GetPipelineLayout(
