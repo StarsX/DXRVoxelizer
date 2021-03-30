@@ -223,7 +223,7 @@ bool Voxelizer::createDescriptorTables()
 		N_RETURN(asTable, false);
 	}
 
-	for (auto i = 0u; i < FrameCount; ++i)
+	for (uint8_t i = 0; i < FrameCount; ++i)
 	{
 		// Output UAV
 		const auto descriptorTable = Util::DescriptorTable::MakeUnique();
@@ -246,7 +246,7 @@ bool Voxelizer::createDescriptorTables()
 	}
 
 	// Ray cast
-	for (auto i = 0ui8; i < FrameCount; ++i)
+	for (uint8_t i = 0; i < FrameCount; ++i)
 	{
 		// Get CBV
 		const auto descriptorTable = Util::DescriptorTable::MakeUnique();
