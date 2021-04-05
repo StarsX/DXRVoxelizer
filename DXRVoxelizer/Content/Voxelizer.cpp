@@ -75,7 +75,7 @@ bool Voxelizer::Init(RayTracing::CommandList* pCommandList, uint32_t width, uint
 	return true;
 }
 
-void Voxelizer::UpdateFrame(uint32_t frameIndex, CXMVECTOR eyePt, CXMMATRIX viewProj)
+void Voxelizer::UpdateFrame(uint8_t frameIndex, CXMVECTOR eyePt, CXMMATRIX viewProj)
 {
 	// General matrices
 	const auto world = XMMatrixScaling(m_bound.w, m_bound.w, m_bound.w) *
@@ -102,7 +102,7 @@ void Voxelizer::UpdateFrame(uint32_t frameIndex, CXMVECTOR eyePt, CXMMATRIX view
 	pCbPerObject->screenToLocal = XMMatrixTranspose(screenToLocal);
 }
 
-void Voxelizer::Render(const RayTracing::CommandList* pCommandList, uint32_t frameIndex,
+void Voxelizer::Render(const RayTracing::CommandList* pCommandList, uint8_t frameIndex,
 	const Descriptor& rtv, const Descriptor& dsv)
 {
 	const DescriptorPool descriptorPools[] =
@@ -340,7 +340,7 @@ bool Voxelizer::buildShaderTables()
 	return true;
 }
 
-void Voxelizer::voxelize(const RayTracing::CommandList* pCommandList, uint32_t frameIndex)
+void Voxelizer::voxelize(const RayTracing::CommandList* pCommandList, uint8_t frameIndex)
 {
 	// Set resource barrier
 	ResourceBarrier barrier;
@@ -359,7 +359,7 @@ void Voxelizer::voxelize(const RayTracing::CommandList* pCommandList, uint32_t f
 		*m_hitGroupShaderTable, *m_missShaderTable, *m_rayGenShaderTable);
 }
 
-void Voxelizer::renderRayCast(const RayTracing::CommandList* pCommandList, uint32_t frameIndex,
+void Voxelizer::renderRayCast(const RayTracing::CommandList* pCommandList, uint8_t frameIndex,
 	const Descriptor& rtv, const Descriptor& dsv)
 {
 	// Set resource barrier

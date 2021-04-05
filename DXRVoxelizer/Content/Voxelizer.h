@@ -17,8 +17,8 @@ public:
 		XUSG::Format rtFormat, XUSG::Format dsFormat, std::vector<XUSG::Resource>& uploaders,
 		XUSG::RayTracing::Geometry& geometry, const char* fileName, const DirectX::XMFLOAT4& posScale);
 
-	void UpdateFrame(uint32_t frameIndex, DirectX::CXMVECTOR eyePt, DirectX::CXMMATRIX viewProj);
-	void Render(const XUSG::RayTracing::CommandList* pCommandList, uint32_t frameIndex,
+	void UpdateFrame(uint8_t frameIndex, DirectX::CXMVECTOR eyePt, DirectX::CXMMATRIX viewProj);
+	void Render(const XUSG::RayTracing::CommandList* pCommandList, uint8_t frameIndex,
 		const XUSG::Descriptor& rtv, const XUSG::Descriptor& dsv);
 
 	static const uint8_t FrameCount = 3;
@@ -79,8 +79,8 @@ protected:
 		XUSG::RayTracing::Geometry* geometries);
 	bool buildShaderTables();
 
-	void voxelize(const XUSG::RayTracing::CommandList* pCommandList, uint32_t frameIndex);
-	void renderRayCast(const XUSG::RayTracing::CommandList* pCommandList, uint32_t frameIndex,
+	void voxelize(const XUSG::RayTracing::CommandList* pCommandList, uint8_t frameIndex);
+	void renderRayCast(const XUSG::RayTracing::CommandList* pCommandList, uint8_t frameIndex,
 		const XUSG::Descriptor& rtv, const XUSG::Descriptor& dsv);
 
 	XUSG::RayTracing::Device m_device;
