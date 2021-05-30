@@ -10,12 +10,12 @@
 class Voxelizer
 {
 public:
-	Voxelizer(const XUSG::RayTracing::Device& device);
+	Voxelizer(const XUSG::RayTracing::Device::sptr& device);
 	virtual ~Voxelizer();
 
 	bool Init(XUSG::RayTracing::CommandList* pCommandList, uint32_t width, uint32_t height,
-		XUSG::Format rtFormat, XUSG::Format dsFormat, std::vector<XUSG::Resource>& uploaders,
-		XUSG::RayTracing::Geometry& geometry, const char* fileName, const DirectX::XMFLOAT4& posScale);
+		XUSG::Format rtFormat, XUSG::Format dsFormat, std::vector<XUSG::Resource::uptr>& uploaders,
+		XUSG::RayTracing::GeometryBuffer* pGeometry, const char* fileName, const DirectX::XMFLOAT4& posScale);
 
 	void UpdateFrame(uint8_t frameIndex, DirectX::CXMVECTOR eyePt, DirectX::CXMMATRIX viewProj);
 	void Render(const XUSG::RayTracing::CommandList* pCommandList, uint8_t frameIndex,
@@ -68,28 +68,28 @@ protected:
 	};
 
 	bool createVB(XUSG::RayTracing::CommandList* pCommandList, uint32_t numVert,
-		uint32_t stride, const uint8_t* pData, std::vector<XUSG::Resource>& uploaders);
+		uint32_t stride, const uint8_t* pData, std::vector<XUSG::Resource::uptr>& uploaders);
 	bool createIB(XUSG::RayTracing::CommandList* pCommandList, uint32_t numIndices,
-		const uint32_t* pData, std::vector<XUSG::Resource>& uploaders);
+		const uint32_t* pData, std::vector<XUSG::Resource::uptr>& uploaders);
 	bool createCB();
 	bool createPipelineLayouts();
 	bool createPipelines(XUSG::Format rtFormat, XUSG::Format dsFormat);
 	bool createDescriptorTables();
 	bool buildAccelerationStructures(const XUSG::RayTracing::CommandList* pCommandList,
-		XUSG::RayTracing::Geometry* geometries);
+		XUSG::RayTracing::GeometryBuffer* pGeometries);
 	bool buildShaderTables();
 
 	void voxelize(const XUSG::RayTracing::CommandList* pCommandList, uint8_t frameIndex);
 	void renderRayCast(const XUSG::RayTracing::CommandList* pCommandList, uint8_t frameIndex,
 		const XUSG::Descriptor& rtv, const XUSG::Descriptor& dsv);
 
-	XUSG::RayTracing::Device m_device;
+	XUSG::RayTracing::Device::sptr m_device;
 
 	XUSG::RayTracing::BottomLevelAS::uptr m_bottomLevelAS;
 	XUSG::RayTracing::TopLevelAS::uptr m_topLevelAS;
 
 	XUSG::PipelineLayout		m_pipelineLayouts[NUM_PIPELINE_LAYOUT];
-	XUSG::RayTracing::Pipeline	m_rayTracingPipeline;
+	XUSG::Pipeline				m_rayTracingPipeline;
 	XUSG::Pipeline				m_pipeline;
 
 	XUSG::DescriptorTable		m_cbvTables[FrameCount];
@@ -104,8 +104,8 @@ protected:
 
 	XUSG::Texture3D::uptr		m_grids[FrameCount];
 
-	XUSG::Resource				m_scratch;
-	XUSG::Resource				m_instances;
+	XUSG::Resource::uptr		m_scratch;
+	XUSG::Resource::uptr		m_instances;
 
 	// Shader tables
 	static const wchar_t* HitGroupName;

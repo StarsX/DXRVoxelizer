@@ -69,13 +69,7 @@
     <ClInclude Include="XUSG\Core\XUSG.h">
       <Filter>XUSG\Core</Filter>
     </ClInclude>
-    <ClInclude Include="XUSG\Core\XUSG_DX12.h">
-      <Filter>XUSG\Core</Filter>
-    </ClInclude>
     <ClInclude Include="XUSG\RayTracing\XUSGRayTracing.h">
-      <Filter>XUSG\RayTracing</Filter>
-    </ClInclude>
-    <ClInclude Include="XUSG\RayTracing\XUSGRayTracing_DX12.h">
       <Filter>XUSG\RayTracing</Filter>
     </ClInclude>
     <ClInclude Include="Common\D3D12RaytracingFallback.h">
@@ -86,6 +80,9 @@
     </ClInclude>
     <ClInclude Include="XUSG\Optional\XUSGObjLoader.h">
       <Filter>XUSG\Optional</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\d3d12.h">
+      <Filter>Common\Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

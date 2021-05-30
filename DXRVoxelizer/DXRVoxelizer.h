@@ -50,13 +50,13 @@ private:
 	XUSG::Viewport			m_viewport;
 	XUSG::RectRange			m_scissorRect;
 
-	XUSG::SwapChain			m_swapChain;
-	XUSG::CommandAllocator	m_commandAllocators[FrameCount];
-	XUSG::CommandQueue		m_commandQueue;
+	XUSG::SwapChain::uptr			m_swapChain;
+	XUSG::CommandAllocator::uptr	m_commandAllocators[FrameCount];
+	XUSG::CommandQueue::uptr		m_commandQueue;
 
 	bool m_isDxrSupported;
 
-	XUSG::RayTracing::Device m_device;
+	XUSG::RayTracing::Device::sptr m_device;
 	XUSG::RenderTarget::uptr m_renderTargets[FrameCount];
 	XUSG::RayTracing::CommandList::uptr m_commandList;
 
@@ -71,7 +71,7 @@ private:
 	// Synchronization objects.
 	uint32_t	m_frameIndex;
 	HANDLE		m_fenceEvent;
-	XUSG::Fence	m_fence;
+	XUSG::Fence::uptr m_fence;
 	uint64_t	m_fenceValues[FrameCount];
 
 	// Application state
@@ -96,5 +96,4 @@ private:
 
 	// Ray tracing
 	void EnableDirectXRaytracing(IDXGIAdapter1* adapter);
-	void CreateRaytracingInterfaces();
 };
