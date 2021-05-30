@@ -32,6 +32,14 @@ protected:
 		NUM_PIPELINE_LAYOUT
 	};
 
+	enum PipelineIndex : uint8_t
+	{
+		RAY_TRACING,
+		RAY_CAST,
+
+		NUM_PIPELINE
+	};
+
 	enum GlobalPipelineLayoutSlot : uint8_t
 	{
 		OUTPUT_GRID,
@@ -89,8 +97,7 @@ protected:
 	XUSG::RayTracing::TopLevelAS::uptr m_topLevelAS;
 
 	XUSG::PipelineLayout		m_pipelineLayouts[NUM_PIPELINE_LAYOUT];
-	XUSG::Pipeline				m_rayTracingPipeline;
-	XUSG::Pipeline				m_pipeline;
+	XUSG::Pipeline				m_pipelines[NUM_PIPELINE];
 
 	XUSG::DescriptorTable		m_cbvTables[FrameCount];
 	XUSG::DescriptorTable		m_srvTables[NUM_SRV_TABLE];

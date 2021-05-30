@@ -192,7 +192,7 @@ bool Voxelizer::createPipelines(Format rtFormat, Format dsFormat)
 			//1, reinterpret_cast<const void**>(&RaygenShaderName));
 		state->SetGlobalPipelineLayout(m_pipelineLayouts[GLOBAL_LAYOUT]);
 		state->SetMaxRecursionDepth(1);
-		X_RETURN(m_rayTracingPipeline, state->GetPipeline(m_rayTracingPipelineCache.get(), L"Raytracing"), false);
+		X_RETURN(m_pipelines[RAY_TRACING], state->GetPipeline(m_rayTracingPipelineCache.get(), L"Raytracing"), false);
 	}
 
 	{
@@ -206,7 +206,7 @@ bool Voxelizer::createPipelines(Format rtFormat, Format dsFormat)
 		state->IASetPrimitiveTopologyType(PrimitiveTopologyType::TRIANGLE);
 		state->DSSetState(Graphics::DepthStencilPreset::DEPTH_STENCIL_NONE, m_graphicsPipelineCache.get());
 		state->OMSetRTVFormats(&rtFormat, 1);
-		X_RETURN(m_pipeline, state->GetPipeline(m_graphicsPipelineCache.get(), L"RayCast"), false);
+		X_RETURN(m_pipelines[RAY_CAST], state->GetPipeline(m_graphicsPipelineCache.get(), L"RayCast"), false);
 	}
 
 	return true;
@@ -327,17 +327,17 @@ bool Voxelizer::buildShaderTables()
 	// Ray gen shader table
 	m_rayGenShaderTable = ShaderTable::MakeUnique();
 	N_RETURN(m_rayGenShaderTable->Create(m_device.get(), 1, shaderIDSize, L"RayGenShaderTable"), false);
-	N_RETURN(m_rayGenShaderTable->AddShaderRecord(ShaderRecord::MakeUnique(m_device.get(), m_rayTracingPipeline, RaygenShaderName).get()), false);
+	N_RETURN(m_rayGenShaderTable->AddShaderRecord(ShaderRecord::MakeUnique(m_device.get(), m_pipelines[RAY_TRACING], RaygenShaderName).get()), false);
 
 	// Hit group shader table
 	m_hitGroupShaderTable = ShaderTable::MakeUnique();
 	N_RETURN(m_hitGroupShaderTable->Create(m_device.get(), 1, shaderIDSize, L"HitGroupShaderTable"), false);
-	N_RETURN(m_hitGroupShaderTable->AddShaderRecord(ShaderRecord::MakeUnique(m_device.get(), m_rayTracingPipeline, HitGroupName).get()), false);
+	N_RETURN(m_hitGroupShaderTable->AddShaderRecord(ShaderRecord::MakeUnique(m_device.get(), m_pipelines[RAY_TRACING], HitGroupName).get()), false);
 
 	// Miss shader table
 	m_missShaderTable = ShaderTable::MakeUnique();
 	N_RETURN(m_missShaderTable->Create(m_device.get(), 1, shaderIDSize, L"MissShaderTable"), false);
-	N_RETURN(m_missShaderTable->AddShaderRecord(ShaderRecord::MakeUnique(m_device.get(), m_rayTracingPipeline, MissShaderName).get()), false);
+	N_RETURN(m_missShaderTable->AddShaderRecord(ShaderRecord::MakeUnique(m_device.get(), m_pipelines[RAY_TRACING], MissShaderName).get()), false);
 
 	return true;
 }
@@ -357,7 +357,7 @@ void Voxelizer::voxelize(const RayTracing::CommandList* pCommandList, uint8_t fr
 	pCommandList->SetComputeDescriptorTable(VERTEX_BUFFERS, m_srvTables[SRV_TABLE_VB]);
 
 	// Fallback layer has no depth
-	pCommandList->DispatchRays(m_rayTracingPipeline, GRID_SIZE, GRID_SIZE * GRID_SIZE, 1,
+	pCommandList->DispatchRays(m_pipelines[RAY_TRACING], GRID_SIZE, GRID_SIZE * GRID_SIZE, 1,
 		m_hitGroupShaderTable.get(), m_missShaderTable.get(), m_rayGenShaderTable.get());
 }
 
@@ -376,7 +376,7 @@ void Voxelizer::renderRayCast(const RayTracing::CommandList* pCommandList, uint8
 	pCommandList->SetGraphicsDescriptorTable(2, m_samplerTable);
 
 	// Set pipeline state
-	pCommandList->SetPipelineState(m_pipeline);
+	pCommandList->SetPipelineState(m_pipelines[RAY_CAST]);
 
 	// Set viewport
 	Viewport viewport(0.0f, 0.0f, m_viewport.x, m_viewport.y);
