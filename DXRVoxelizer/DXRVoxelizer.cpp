@@ -181,7 +181,6 @@ void DXRVoxelizer::LoadAssets()
 	XMStoreFloat4x4(&m_proj, proj);
 
 	// View initialization
-	// View initialization
 	m_focusPt = XMFLOAT3(0.0f, 4.0f, 0.0f);
 	m_eyePt = XMFLOAT3(8.0f, 12.0f, -14.0f);
 	const auto focusPt = XMLoadFloat3(&m_focusPt);

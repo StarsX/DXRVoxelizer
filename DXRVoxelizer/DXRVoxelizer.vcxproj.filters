@@ -117,6 +117,8 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="Content\Shaders\DXRVoxelizer.hlsl" />
+    <CustomBuild Include="Content\Shaders\DXRVoxelizer.hlsl">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>
