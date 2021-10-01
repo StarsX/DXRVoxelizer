@@ -30,7 +30,7 @@ DXRVoxelizer::DXRVoxelizer(uint32_t width, uint32_t height, std::wstring name) :
 	m_showFPS(true),
 	m_pausing(false),
 	m_tracking(false),
-	m_meshFileName("Media/bunny.obj"),
+	m_meshFileName("Assets/bunny.obj"),
 	m_meshPosScale(0.0f, 0.0f, 0.0f, 1.0f)
 {
 #if defined (_DEBUG)

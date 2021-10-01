@@ -1,1 +1,1 @@
-start DXRVoxelizer.exe -mesh Media/dragon.obj
+start DXRVoxelizer.exe -mesh Assets/dragon.obj
