@@ -18,7 +18,7 @@ public:
 		XUSG::RayTracing::GeometryBuffer* pGeometry, const char* fileName, const DirectX::XMFLOAT4& posScale);
 
 	void UpdateFrame(uint8_t frameIndex, DirectX::CXMVECTOR eyePt, DirectX::CXMMATRIX viewProj);
-	void Render(const XUSG::RayTracing::CommandList* pCommandList, uint8_t frameIndex,
+	void Render(XUSG::RayTracing::CommandList* pCommandList, uint8_t frameIndex,
 		const XUSG::Descriptor& rtv, const XUSG::Descriptor& dsv);
 
 	static const uint8_t FrameCount = 3;
@@ -83,12 +83,12 @@ protected:
 	bool createPipelineLayouts();
 	bool createPipelines(XUSG::Format rtFormat, XUSG::Format dsFormat);
 	bool createDescriptorTables();
-	bool buildAccelerationStructures(const XUSG::RayTracing::CommandList* pCommandList,
+	bool buildAccelerationStructures(XUSG::RayTracing::CommandList* pCommandList,
 		XUSG::RayTracing::GeometryBuffer* pGeometries);
 	bool buildShaderTables();
 
-	void voxelize(const XUSG::RayTracing::CommandList* pCommandList, uint8_t frameIndex);
-	void renderRayCast(const XUSG::RayTracing::CommandList* pCommandList, uint8_t frameIndex,
+	void voxelize(XUSG::RayTracing::CommandList* pCommandList, uint8_t frameIndex);
+	void renderRayCast(XUSG::RayTracing::CommandList* pCommandList, uint8_t frameIndex,
 		const XUSG::Descriptor& rtv, const XUSG::Descriptor& dsv);
 
 	XUSG::RayTracing::Device::sptr m_device;

@@ -102,7 +102,7 @@ void Voxelizer::UpdateFrame(uint8_t frameIndex, CXMVECTOR eyePt, CXMMATRIX viewP
 	pCbPerObject->screenToLocal = XMMatrixTranspose(screenToLocal);
 }
 
-void Voxelizer::Render(const RayTracing::CommandList* pCommandList, uint8_t frameIndex,
+void Voxelizer::Render(RayTracing::CommandList* pCommandList, uint8_t frameIndex,
 	const Descriptor& rtv, const Descriptor& dsv)
 {
 	const DescriptorPool descriptorPools[] =
@@ -273,7 +273,7 @@ bool Voxelizer::createDescriptorTables()
 	return true;
 }
 
-bool Voxelizer::buildAccelerationStructures(const RayTracing::CommandList* pCommandList, GeometryBuffer* pGeometry)
+bool Voxelizer::buildAccelerationStructures(RayTracing::CommandList* pCommandList, GeometryBuffer* pGeometry)
 {
 	AccelerationStructure::SetFrameCount(FrameCount);
 
@@ -342,7 +342,7 @@ bool Voxelizer::buildShaderTables()
 	return true;
 }
 
-void Voxelizer::voxelize(const RayTracing::CommandList* pCommandList, uint8_t frameIndex)
+void Voxelizer::voxelize(RayTracing::CommandList* pCommandList, uint8_t frameIndex)
 {
 	// Set resource barrier
 	ResourceBarrier barrier;
@@ -361,7 +361,7 @@ void Voxelizer::voxelize(const RayTracing::CommandList* pCommandList, uint8_t fr
 		m_hitGroupShaderTable.get(), m_missShaderTable.get(), m_rayGenShaderTable.get());
 }
 
-void Voxelizer::renderRayCast(const RayTracing::CommandList* pCommandList, uint8_t frameIndex,
+void Voxelizer::renderRayCast(RayTracing::CommandList* pCommandList, uint8_t frameIndex,
 	const Descriptor& rtv, const Descriptor& dsv)
 {
 	// Set resource barrier
