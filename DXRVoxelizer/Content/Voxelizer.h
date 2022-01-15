@@ -10,7 +10,7 @@
 class Voxelizer
 {
 public:
-	Voxelizer(const XUSG::RayTracing::Device::sptr& device);
+	Voxelizer();
 	virtual ~Voxelizer();
 
 	bool Init(XUSG::RayTracing::CommandList* pCommandList, uint32_t width, uint32_t height,
@@ -79,19 +79,17 @@ protected:
 		uint32_t stride, const uint8_t* pData, std::vector<XUSG::Resource::uptr>& uploaders);
 	bool createIB(XUSG::RayTracing::CommandList* pCommandList, uint32_t numIndices,
 		const uint32_t* pData, std::vector<XUSG::Resource::uptr>& uploaders);
-	bool createCB();
-	bool createPipelineLayouts();
+	bool createCB(const XUSG::Device* pDevice);
+	bool createPipelineLayouts(const XUSG::RayTracing::Device* pDevice);
 	bool createPipelines(XUSG::Format rtFormat, XUSG::Format dsFormat);
 	bool createDescriptorTables();
 	bool buildAccelerationStructures(XUSG::RayTracing::CommandList* pCommandList,
 		XUSG::RayTracing::GeometryBuffer* pGeometries);
-	bool buildShaderTables();
+	bool buildShaderTables(const XUSG::RayTracing::Device* pDevice);
 
 	void voxelize(XUSG::RayTracing::CommandList* pCommandList, uint8_t frameIndex);
 	void renderRayCast(XUSG::RayTracing::CommandList* pCommandList, uint8_t frameIndex,
 		const XUSG::Descriptor& rtv, const XUSG::Descriptor& dsv);
-
-	XUSG::RayTracing::Device::sptr m_device;
 
 	XUSG::RayTracing::BottomLevelAS::uptr m_bottomLevelAS;
 	XUSG::RayTracing::TopLevelAS::uptr m_topLevelAS;

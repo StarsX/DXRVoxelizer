@@ -90,7 +90,7 @@ void DXRVoxelizer::LoadPipeline()
 		ThrowIfFailed(factory->EnumAdapters1(i, &dxgiAdapter));
 		EnableDirectXRaytracing(dxgiAdapter.get());
 
-		m_device = RayTracing::Device::MakeShared();
+		m_device = RayTracing::Device::MakeUnique();
 		hr = m_device->Create(dxgiAdapter.get(), D3D_FEATURE_LEVEL_11_0);
 		N_RETURN(m_device->CreateInterface(createDeviceFlags), ThrowIfFailed(E_FAIL));
 	}
@@ -143,9 +143,9 @@ void DXRVoxelizer::LoadAssets()
 		m_commandAllocators[m_frameIndex].get(), nullptr), ThrowIfFailed(E_FAIL));
 
 	// Create ray tracing interfaces
-	N_RETURN(m_commandList->CreateInterface(m_device.get()), ThrowIfFailed(E_FAIL));
+	N_RETURN(m_commandList->CreateInterface(), ThrowIfFailed(E_FAIL));
 
-	m_voxelizer = make_unique<Voxelizer>(m_device);
+	m_voxelizer = make_unique<Voxelizer>();
 	if (!m_voxelizer) ThrowIfFailed(E_FAIL);
 
 	vector<Resource::uptr> uploaders(0);
