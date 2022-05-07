@@ -26,11 +26,11 @@ struct RayPayload
 // Texture and buffers
 //--------------------------------------------------------------------------------------
 RWTexture3D<float4>			RenderTarget	: register(u0);
-RaytracingAS				g_scene : register(t0);
+RaytracingAS				g_scene : register(t0, space2);
 
 // IA buffers
-Buffer<uint>				g_indexBuffers[]	: register(t0, space1);
-StructuredBuffer<Vertex>	g_vertexBuffers[]	: register(t0, space2);
+Buffer<uint>				g_indexBuffers[]	: register(t0, space0);
+StructuredBuffer<Vertex>	g_vertexBuffers[]	: register(t0, space1);
 
 //--------------------------------------------------------------------------------------
 // Samplers
@@ -78,7 +78,7 @@ void raygenMain()
 	payload.Normal = 0.0.xxx;
 	payload.IsInside = false;
 	TraceRay(g_scene, RAY_FLAG_NONE, ~0, 0, 1, 0, ray, payload);
-	
+
 	// Write the raytraced color to the output texture.
 	if (payload.IsInside)
 		RenderTarget[index] = float4(payload.Normal, 1.0);

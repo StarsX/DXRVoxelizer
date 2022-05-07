@@ -153,11 +153,11 @@ bool Voxelizer::createPipelineLayouts(const RayTracing::Device* pDevice)
 	// Global pipeline layout
 	// This is a pipeline layout that is shared across all raytracing shaders invoked during a DispatchRays() call.
 	{
-		const auto pipelineLayout = RayTracing::PipelineLayout ::MakeUnique();
+		const auto pipelineLayout = RayTracing::PipelineLayout::MakeUnique();
 		pipelineLayout->SetRange(OUTPUT_GRID, DescriptorType::UAV, 1, 0);
-		pipelineLayout->SetRootSRV(ACCELERATION_STRUCTURE, 0, 0, DescriptorFlag::DATA_STATIC);
-		pipelineLayout->SetRange(INDEX_BUFFERS, DescriptorType::SRV, 1, 0, 1);
-		pipelineLayout->SetRange(VERTEX_BUFFERS, DescriptorType::SRV, 1, 0, 2);
+		pipelineLayout->SetRange(INDEX_BUFFERS, DescriptorType::SRV, 1, 0, 0);
+		pipelineLayout->SetRange(VERTEX_BUFFERS, DescriptorType::SRV, 1, 0, 1);
+		pipelineLayout->SetRootSRV(ACCELERATION_STRUCTURE, 0, 2, DescriptorFlag::DATA_STATIC);
 		XUSG_X_RETURN(m_pipelineLayouts[GLOBAL_LAYOUT], pipelineLayout->GetPipelineLayout(
 			pDevice, m_pipelineLayoutCache.get(), PipelineLayoutFlag::NONE,
 			L"RayTracerGlobalPipelineLayout"), false);
@@ -165,7 +165,7 @@ bool Voxelizer::createPipelineLayouts(const RayTracing::Device* pDevice)
 
 	{
 		// Get pipeline layout
-		const auto pipelineLayout = Util::PipelineLayout ::MakeUnique();
+		const auto pipelineLayout = Util::PipelineLayout::MakeUnique();
 		pipelineLayout->SetRange(0, DescriptorType::CBV, 1, 0, 0, DescriptorFlag::DATA_STATIC);
 		pipelineLayout->SetRange(1, DescriptorType::SRV, 1, 0);
 		pipelineLayout->SetRange(2, DescriptorType::SAMPLER, 1, 0);
