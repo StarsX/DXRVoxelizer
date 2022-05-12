@@ -21,15 +21,20 @@ namespace XUSG
 		XUSG_INTERFACE void CalcSubresources(std::vector<uint32_t>& subresources, const Texture* pResource, uint8_t mipSlice, uint8_t planeSlice = 0);
 
 		XUSG_INTERFACE uint32_t CalcSubresource(const Texture* pResource, uint8_t mipSlice, uint32_t arraySlice, uint8_t planeSlice = 0);
+		XUSG_INTERFACE uint32_t CalcSubresource(const Texture3D* pResource, uint8_t mipSlice, uint8_t planeSlice = 0);
 
 		// Resource view generation helpers coupled for XUSG resources
 		XUSG_INTERFACE ResourceView GetCBV(ConstantBuffer* pResource, uint32_t index = 0);
 		XUSG_INTERFACE ResourceView GetSRV(Buffer* pResource, uint32_t index = 0);
 		XUSG_INTERFACE ResourceView GetSRV(Texture* pResource, uint32_t index = 0);
+		XUSG_INTERFACE ResourceView GetSRV(Texture3D* pResource);
 		XUSG_INTERFACE ResourceView GetSRVLevel(Texture* pResource, uint8_t level);
+		XUSG_INTERFACE ResourceView GetSRVLevel(Texture3D* pResource, uint8_t level);
 		XUSG_INTERFACE ResourceView GetUAV(Buffer* pResource, uint8_t index = 0);
 		XUSG_INTERFACE ResourceView GetUAV(Texture* pResource, uint8_t index = 0);
+		XUSG_INTERFACE ResourceView GetUAV(Texture3D* pResource, uint8_t index = 0);
 		XUSG_INTERFACE ResourceView GetPackedUAV(Texture* pResource, uint8_t index = 0);
+		XUSG_INTERFACE ResourceView GetPackedUAV(Texture3D* pResource, uint8_t index = 0);
 		XUSG_INTERFACE ResourceView GetPackedUAV(TypedBuffer* pResource, uint8_t index = 0);
 		XUSG_INTERFACE ResourceView GetRTV(RenderTarget* pResource, uint32_t slice = 0, uint8_t mipLevel = 0);
 		XUSG_INTERFACE ResourceView GetArrayRTV(RenderTarget* pResource, uint8_t mipLevel = 0);
@@ -48,10 +53,16 @@ namespace XUSG
 			//CommandList();
 			virtual ~CommandList() {}
 
+			// By default maxCbvsEachSpace = 14, maxSrvsEachSpace = 32, and maxUavsEachSpace = 16
 			virtual bool Create(XUSG::CommandList* pCommandList, uint32_t samplerPoolSize, uint32_t cbvSrvUavPoolSize,
 				uint32_t maxSamplers = 16, const uint32_t* pMaxCbvsEachSpace = nullptr, const uint32_t* pMaxSrvsEachSpace = nullptr,
 				const uint32_t* pMaxUavsEachSpace = nullptr, uint32_t maxCbvSpaces = 1, uint32_t maxSrvSpaces = 1, uint32_t maxUavSpaces = 1) = 0;
+			virtual bool Create(const Device* pDevice, void* pHandle, uint32_t samplerPoolSize, uint32_t cbvSrvUavPoolSize,
+				uint32_t maxSamplers = 16, const uint32_t* pMaxCbvsEachSpace = nullptr, const uint32_t* pMaxSrvsEachSpace = nullptr,
+				const uint32_t* pMaxUavsEachSpace = nullptr, uint32_t maxCbvSpaces = 1, uint32_t maxSrvSpaces = 1, uint32_t maxUavSpaces = 1,
+				const wchar_t* name = nullptr) = 0;
 			virtual bool Close() const = 0;
+			virtual bool CloseForPresent(RenderTarget* pBackBuffer) = 0;
 			virtual bool Reset(const CommandAllocator* pAllocator, const Pipeline& initialState) = 0;
 
 			virtual void ClearState(const Pipeline& initialState) const = 0;
@@ -137,29 +148,25 @@ namespace XUSG
 			virtual void ResetDescriptorPool(DescriptorPoolType type) = 0;
 			virtual void Resize() = 0;
 
-			virtual bool Create(const Device* pDevice, void* pHandle, uint32_t samplerPoolSize, uint32_t cbvSrvUavPoolSize,
-				uint32_t maxSamplers = 16, const uint32_t* pMaxCbvsEachSpace = nullptr, const uint32_t* pMaxSrvsEachSpace = nullptr,
-				const uint32_t* pMaxUavsEachSpace = nullptr, uint32_t maxCbvSpaces = 1, uint32_t maxSrvSpaces = 1, uint32_t maxUavSpaces = 1,
-				const wchar_t* name = nullptr) = 0;
-
 			virtual void* GetHandle() const = 0;
 			virtual void* GetDeviceHandle() const = 0;
 
 			virtual const Device* GetDevice() const = 0;
+			virtual XUSG::CommandList* AsCommandList() = 0;
 
 			using uptr = std::unique_ptr<CommandList>;
 			using sptr = std::shared_ptr<CommandList>;
 
-			static uptr MakeUnique(XUSG::API api = XUSG::API::DIRECTX_12);
-			static sptr MakeShared(XUSG::API api = XUSG::API::DIRECTX_12);
+			static uptr MakeUnique(API api = API::DIRECTX_12);
+			static sptr MakeShared(API api = API::DIRECTX_12);
 			static uptr MakeUnique(XUSG::CommandList* pCommandList, uint32_t samplerPoolSize, uint32_t cbvSrvUavPoolSize,
 				uint32_t maxSamplers = 16, const uint32_t* pMaxCbvsEachSpace = nullptr, const uint32_t* pMaxSrvsEachSpace = nullptr,
 				const uint32_t* pMaxUavsEachSpace = nullptr, uint32_t maxCbvSpaces = 1, uint32_t maxSrvSpaces = 1, uint32_t maxUavSpaces = 1,
-				XUSG::API api = XUSG::API::DIRECTX_12);
+				API api = API::DIRECTX_12);
 			static sptr MakeShared(XUSG::CommandList* pCommandList, uint32_t samplerPoolSize, uint32_t cbvSrvUavPoolSize,
 				uint32_t maxSamplers = 16, const uint32_t* pMaxCbvsEachSpace = nullptr, const uint32_t* pMaxSrvsEachSpace = nullptr,
 				const uint32_t* pMaxUavsEachSpace = nullptr, uint32_t maxCbvSpaces = 1, uint32_t maxSrvSpaces = 1, uint32_t maxUavSpaces = 1,
-				XUSG::API api = XUSG::API::DIRECTX_12);
+				API api = API::DIRECTX_12);
 		};
 	}
 }
