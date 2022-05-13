@@ -21,7 +21,6 @@ Voxelizer::Voxelizer() :
 	m_instances()
 {
 	m_shaderPool = ShaderPool::MakeUnique();
-	AccelerationStructure::SetUAVCount(2);
 }
 
 Voxelizer::~Voxelizer()
