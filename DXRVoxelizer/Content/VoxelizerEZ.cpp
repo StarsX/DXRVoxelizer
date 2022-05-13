@@ -148,17 +148,13 @@ bool VoxelizerEZ::createShaders()
 }
 
 bool VoxelizerEZ::buildAccelerationStructures(RayTracing::EZ::CommandList* pCommandList,
-	const XUSG::RayTracing::Device* pDevice, GeometryBuffer* pGeometry)
+	const RayTracing::Device* pDevice, GeometryBuffer* pGeometry)
 {
 	AccelerationStructure::SetFrameCount(FrameCount);
 
 	// Set geometries
 	BottomLevelAS::SetTriangleGeometries(*pGeometry, 1, Format::R32G32B32_FLOAT,
 		&m_vertexBuffer->GetVBV(), &m_indexBuffer->GetIBV());
-
-	// Descriptor index in descriptor pool
-	const auto bottomLevelASIndex = 0u;
-	const auto topLevelASIndex = bottomLevelASIndex + 1;
 
 	// Prebuild
 	m_bottomLevelAS = BottomLevelAS::MakeUnique();
@@ -214,7 +210,7 @@ void VoxelizerEZ::voxelize(RayTracing::EZ::CommandList* pCommandList, uint8_t fr
 }
 
 void VoxelizerEZ::renderRayCast(RayTracing::EZ::CommandList* pCommandList, uint8_t frameIndex,
-	XUSG::RenderTarget* pRenderTarget, DepthStencil* pDepthStencil)
+	RenderTarget* pRenderTarget, DepthStencil* pDepthStencil)
 {
 	// set pipeline state
 	pCommandList->SetGraphicsShader(Shader::Stage::VS, m_shaders[VS_SCREEN_QUAD]);
