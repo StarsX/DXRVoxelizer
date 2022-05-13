@@ -21,14 +21,13 @@ VoxelizerEZ::VoxelizerEZ() :
 	m_instances()
 {
 	m_shaderPool = ShaderPool::MakeUnique();
-	AccelerationStructure::SetUAVCount(2);
 }
 
 VoxelizerEZ::~VoxelizerEZ()
 {
 }
 
-bool VoxelizerEZ::Init(XUSG::RayTracing::EZ::CommandList* pCommandList, uint32_t width, uint32_t height,
+bool VoxelizerEZ::Init(RayTracing::EZ::CommandList* pCommandList, uint32_t width, uint32_t height,
 	Format rtFormat, Format dsFormat, vector<Resource::uptr>& uploaders, GeometryBuffer* pGeometry,
 	const char* fileName, const XMFLOAT4& posScale)
 {
@@ -92,7 +91,7 @@ void VoxelizerEZ::UpdateFrame(uint8_t frameIndex, CXMVECTOR eyePt, CXMMATRIX vie
 }
 
 void VoxelizerEZ::Render(RayTracing::EZ::CommandList* pCommandList, uint8_t frameIndex,
-	XUSG::RenderTarget* pRenderTarget, XUSG::DepthStencil* pDepthStencil)
+	RenderTarget* pRenderTarget, DepthStencil* pDepthStencil)
 {
 	voxelize(pCommandList, frameIndex);
 	renderRayCast(pCommandList, frameIndex, pRenderTarget, pDepthStencil);
@@ -215,7 +214,7 @@ void VoxelizerEZ::voxelize(RayTracing::EZ::CommandList* pCommandList, uint8_t fr
 }
 
 void VoxelizerEZ::renderRayCast(RayTracing::EZ::CommandList* pCommandList, uint8_t frameIndex,
-	XUSG::RenderTarget* pRenderTarget, XUSG::DepthStencil* pDepthStencil)
+	XUSG::RenderTarget* pRenderTarget, DepthStencil* pDepthStencil)
 {
 	// set pipeline state
 	pCommandList->SetGraphicsShader(Shader::Stage::VS, m_shaders[VS_SCREEN_QUAD]);
