@@ -14,6 +14,7 @@
 #include "DXFramework.h"
 #include "StepTimer.h"
 #include "Voxelizer.h"
+#include "VoxelizerEZ.h"
 
 using namespace DirectX;
 
@@ -59,9 +60,11 @@ private:
 	XUSG::RayTracing::Device::uptr m_device;
 	XUSG::RenderTarget::uptr m_renderTargets[FrameCount];
 	XUSG::RayTracing::CommandList::uptr m_commandList;
+	XUSG::RayTracing::EZ::CommandList::uptr m_commandListEZ;
 
 	// App resources.
 	std::unique_ptr<Voxelizer>	m_voxelizer;
+	std::unique_ptr<VoxelizerEZ>	m_voxelizerEZ;
 	XUSG::DepthStencil::uptr	m_depth;
 	DirectX::XMFLOAT4X4	m_proj;
 	DirectX::XMFLOAT4X4	m_view;
@@ -75,6 +78,7 @@ private:
 	uint64_t	m_fenceValues[FrameCount];
 
 	// Application state
+	bool		m_useEZ;
 	bool		m_showFPS;
 	bool		m_pausing;
 	StepTimer	m_timer;
