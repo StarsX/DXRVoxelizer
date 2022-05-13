@@ -93,6 +93,9 @@
     <ClInclude Include="XUSG\Helper\XUSGRayTracing-EZ.h">
       <Filter>XUSG\Helper</Filter>
     </ClInclude>
+    <ClInclude Include="Content\VoxelizerEZ.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -115,6 +118,9 @@
     </ClCompile>
     <ClCompile Include="XUSG\Optional\XUSGObjLoader.cpp">
       <Filter>XUSG\Optional</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\VoxelizerEZ.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
