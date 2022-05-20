@@ -105,8 +105,8 @@ bool VoxelizerEZ::createVB(RayTracing::EZ::CommandList* pCommandList, uint32_t n
 		ResourceFlag::NONE, MemoryType::DEFAULT), false);
 	uploaders.emplace_back(Resource::MakeUnique());
 
-	return m_vertexBuffer->Upload(pCommandList->AsCommandList(), uploaders.back().get(), pData,
-		stride * numVert, 0, ResourceState::NON_PIXEL_SHADER_RESOURCE);
+	return m_vertexBuffer->Upload(pCommandList->AsCommandList(),
+		uploaders.back().get(), pData, stride * numVert);
 }
 
 bool VoxelizerEZ::createIB(RayTracing::EZ::CommandList* pCommandList, uint32_t numIndices,
@@ -118,8 +118,8 @@ bool VoxelizerEZ::createIB(RayTracing::EZ::CommandList* pCommandList, uint32_t n
 		ResourceFlag::NONE, MemoryType::DEFAULT), false);
 	uploaders.emplace_back(Resource::MakeUnique());
 
-	return m_indexBuffer->Upload(pCommandList->AsCommandList(), uploaders.back().get(), pData,
-		byteWidth, 0, ResourceState::NON_PIXEL_SHADER_RESOURCE);
+	return m_indexBuffer->Upload(pCommandList->AsCommandList(),
+		uploaders.back().get(), pData, byteWidth);
 }
 
 bool VoxelizerEZ::createCB(const XUSG::Device* pDevice)
@@ -153,8 +153,9 @@ bool VoxelizerEZ::buildAccelerationStructures(RayTracing::EZ::CommandList* pComm
 	AccelerationStructure::SetFrameCount(FrameCount);
 
 	// Set geometries
-	BottomLevelAS::SetTriangleGeometries(*pGeometry, 1, Format::R32G32B32_FLOAT,
-		&m_vertexBuffer->GetVBV(), &m_indexBuffer->GetIBV());
+	auto vbv = XUSG::EZ::GetVBV(m_vertexBuffer.get());
+	auto ibv = XUSG::EZ::GetIBV(m_indexBuffer.get());
+	pCommandList->SetTriangleGeometries(*pGeometry, 1, Format::R32G32B32_FLOAT, &vbv, &ibv);
 
 	// Prebuild
 	m_bottomLevelAS = BottomLevelAS::MakeUnique();
