@@ -103,7 +103,6 @@ COPY /Y "$(ProjectDir)XUSG\Bin\$(Platform)\$(Configuration)\*.dll" "$(ProjectDir
   <ItemGroup>
     <ClInclude Include="Common\d3d12.h" />
     <ClInclude Include="Common\D3D12RaytracingFallback.h" />
-    <ClInclude Include="Common\D3D12RaytracingHelpers.hpp" />
     <ClInclude Include="Common\d3dx12.h" />
     <ClInclude Include="Common\DXFramework.h" />
     <ClInclude Include="Common\DXFrameworkHelper.h" />
@@ -117,8 +116,10 @@ COPY /Y "$(ProjectDir)XUSG\Bin\$(Platform)\$(Configuration)\*.dll" "$(ProjectDir
     <ClInclude Include="XUSG\Core\XUSG.h" />
     <ClInclude Include="XUSG\Helper\XUSG-EZ.h" />
     <ClInclude Include="XUSG\Helper\XUSGRayTracing-EZ.h" />
+    <ClInclude Include="XUSG\Helper\XUSGUltimate-EZ.h" />
     <ClInclude Include="XUSG\Optional\XUSGObjLoader.h" />
     <ClInclude Include="XUSG\RayTracing\XUSGRayTracing.h" />
+    <ClInclude Include="XUSG\Ultimate\XUSGUltimate.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Common\DXFramework.cpp">

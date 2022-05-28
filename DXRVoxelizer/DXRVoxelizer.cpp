@@ -152,22 +152,19 @@ void DXRVoxelizer::LoadAssets()
 	XUSG_N_RETURN(m_commandListEZ->Create(m_commandList.get(), 1, 16, 16,
 		nullptr, nullptr, nullptr, 1, 2, 1, 1, 2), ThrowIfFailed(E_FAIL));
 
+	vector<Resource::uptr> uploaders(0);
+	GeometryBuffer geometries[2];
+
 	m_voxelizer = make_unique<Voxelizer>();
-	if (!m_voxelizer) ThrowIfFailed(E_FAIL);
+	XUSG_N_RETURN(m_voxelizer->Init(pCommandList, m_width, m_height, m_renderTargets[0]->GetFormat(),
+		m_depth->GetFormat(), uploaders, &geometries[0], m_meshFileName.c_str(),
+		m_meshPosScale), ThrowIfFailed(E_FAIL));
 
 	m_voxelizerEZ = make_unique<VoxelizerEZ>();
-	if (!m_voxelizerEZ) ThrowIfFailed(E_FAIL);
-
-	vector<Resource::uptr> uploaders(0);
-	GeometryBuffer geometry;
-	if (!m_voxelizer->Init(pCommandList, m_width, m_height, m_renderTargets[0]->GetFormat(),
-		m_depth->GetFormat(), uploaders, &geometry, m_meshFileName.c_str(),
-		m_meshPosScale)) ThrowIfFailed(E_FAIL);
-
-	if (!m_voxelizerEZ->Init(m_commandListEZ.get(),
+	XUSG_N_RETURN(m_voxelizerEZ->Init(m_commandListEZ.get(),
 		m_width, m_height, m_renderTargets[0]->GetFormat(),
-		m_depth->GetFormat(), uploaders, &geometry, m_meshFileName.c_str(),
-		m_meshPosScale)) ThrowIfFailed(E_FAIL);
+		m_depth->GetFormat(), uploaders, &geometries[1], m_meshFileName.c_str(),
+		m_meshPosScale), ThrowIfFailed(E_FAIL));
 
 	// Close the command list and execute it to begin the initial GPU setup.
 	XUSG_N_RETURN(pCommandList->Close(), ThrowIfFailed(E_FAIL));

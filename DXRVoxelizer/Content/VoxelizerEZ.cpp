@@ -194,7 +194,7 @@ void VoxelizerEZ::voxelize(RayTracing::EZ::CommandList* pCommandList, uint8_t fr
 
 	// Set UAV
 	const auto uav = XUSG::EZ::GetUAV(m_grids[frameIndex].get());
-	pCommandList->SetComputeResources(DescriptorType::UAV, 0, 1, &uav, 0);
+	pCommandList->SetResources(Shader::Stage::CS, DescriptorType::UAV, 0, 1, &uav);
 
 	// Set SRVs
 	const XUSG::EZ::ResourceView srvs[] =
@@ -202,8 +202,8 @@ void VoxelizerEZ::voxelize(RayTracing::EZ::CommandList* pCommandList, uint8_t fr
 		XUSG::EZ::GetSRV(m_indexBuffer.get()),
 		XUSG::EZ::GetSRV(m_vertexBuffer.get()),
 	};
-	pCommandList->SetComputeResources(DescriptorType::SRV, 0, 1, &srvs[0], 0);
-	pCommandList->SetComputeResources(DescriptorType::SRV, 0, 1, &srvs[1], 1);
+	pCommandList->SetResources(Shader::Stage::CS, DescriptorType::SRV, 0, 1, &srvs[0], 0);
+	pCommandList->SetResources(Shader::Stage::CS, DescriptorType::SRV, 0, 1, &srvs[1], 1);
 
 	// Dispatch command
 	pCommandList->DispatchRays(GRID_SIZE, GRID_SIZE * GRID_SIZE, 1, RaygenShaderName,
@@ -225,15 +225,15 @@ void VoxelizerEZ::renderRayCast(RayTracing::EZ::CommandList* pCommandList, uint8
 
 	// Set CBV
 	const auto cbv = XUSG::EZ::GetCBV(m_cbPerObject.get());
-	pCommandList->SetGraphicsResources(Shader::Stage::PS, DescriptorType::CBV, 0, 1, &cbv);
+	pCommandList->SetResources(Shader::Stage::PS, DescriptorType::CBV, 0, 1, &cbv);
 
 	// Set SRV
 	const auto srv = XUSG::EZ::GetSRV(m_grids[frameIndex].get());
-	pCommandList->SetGraphicsResources(Shader::Stage::PS, DescriptorType::SRV, 0, 1, &srv);
+	pCommandList->SetResources(Shader::Stage::PS, DescriptorType::SRV, 0, 1, &srv);
 
 	// Set sampler
 	const auto sampler = SamplerPreset::LINEAR_CLAMP;
-	pCommandList->SetGraphicsSamplerStates(0, 1, &sampler);
+	pCommandList->SetSamplerStates(Shader::Stage::PS, 0, 1, &sampler);
 
 	// Set viewport
 	Viewport viewport(0.0f, 0.0f, m_viewport.x, m_viewport.y);
