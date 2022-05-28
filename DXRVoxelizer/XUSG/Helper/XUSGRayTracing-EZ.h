@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "XUSG-EZ.h"
+#include "XUSGUltimate-EZ.h"
 #include "RayTracing/XUSGRayTracing.h"
 
 namespace XUSG
@@ -14,10 +14,10 @@ namespace XUSG
 		namespace EZ
 		{
 			//--------------------------------------------------------------------------------------
-			// RayTracing Command list
+			// RayTracing command list
 			//--------------------------------------------------------------------------------------
 			class XUSG_INTERFACE CommandList :
-				public virtual XUSG::EZ::CommandList
+				public virtual Ultimate::EZ::CommandList
 			{
 			public:
 				//CommandList();

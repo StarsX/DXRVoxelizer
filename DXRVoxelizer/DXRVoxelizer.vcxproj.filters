@@ -19,12 +19,6 @@
     <Filter Include="XUSG">
       <UniqueIdentifier>{0b7df9f8-419c-4d6d-b182-9b8e31a22cae}</UniqueIdentifier>
     </Filter>
-    <Filter Include="XUSG\Core">
-      <UniqueIdentifier>{84115389-3801-4467-868a-5b18192ae706}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="XUSG\RayTracing">
-      <UniqueIdentifier>{43618ade-82e4-4409-b030-a325e562ca51}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Common\Header Files">
       <UniqueIdentifier>{34416045-60ca-45d6-b1b5-5b35886ab7dd}</UniqueIdentifier>
     </Filter>
@@ -69,16 +63,7 @@
     <ClInclude Include="Content\SharedConst.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="XUSG\Core\XUSG.h">
-      <Filter>XUSG\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="XUSG\RayTracing\XUSGRayTracing.h">
-      <Filter>XUSG\RayTracing</Filter>
-    </ClInclude>
     <ClInclude Include="Common\D3D12RaytracingFallback.h">
-      <Filter>Common\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Common\D3D12RaytracingHelpers.hpp">
       <Filter>Common\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="XUSG\Optional\XUSGObjLoader.h">
@@ -87,14 +72,26 @@
     <ClInclude Include="Common\d3d12.h">
       <Filter>Common\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="XUSG\Helper\XUSG-EZ.h">
-      <Filter>XUSG\Helper</Filter>
-    </ClInclude>
-    <ClInclude Include="XUSG\Helper\XUSGRayTracing-EZ.h">
-      <Filter>XUSG\Helper</Filter>
-    </ClInclude>
     <ClInclude Include="Content\VoxelizerEZ.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="XUSG\Core\XUSG.h">
+      <Filter>XUSG</Filter>
+    </ClInclude>
+    <ClInclude Include="XUSG\Helper\XUSG-EZ.h">
+      <Filter>XUSG</Filter>
+    </ClInclude>
+    <ClInclude Include="XUSG\Helper\XUSGRayTracing-EZ.h">
+      <Filter>XUSG</Filter>
+    </ClInclude>
+    <ClInclude Include="XUSG\RayTracing\XUSGRayTracing.h">
+      <Filter>XUSG</Filter>
+    </ClInclude>
+    <ClInclude Include="XUSG\Ultimate\XUSGUltimate.h">
+      <Filter>XUSG</Filter>
+    </ClInclude>
+    <ClInclude Include="XUSG\Helper\XUSGUltimate-EZ.h">
+      <Filter>XUSG</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

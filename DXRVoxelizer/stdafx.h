@@ -19,7 +19,7 @@
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers.
 #endif
 
-#define DLL_INTERFACE __declspec(dllimport)
+#define XUSG_INTERFACE __declspec(dllimport)
 
 #include <windows.h>
 
@@ -45,7 +45,6 @@
 #include <shellapi.h>
 
 #include "D3D12RaytracingFallback.h"
-#include "D3D12RaytracingHelpers.hpp"
 
 #if defined(DEBUG) | defined(_DEBUG)
 #ifndef DBG_NEW
@@ -53,5 +52,3 @@
 #define new DBG_NEW
 #endif
 #endif  // _DEBUG
-
-#define ENABLE_DXR_FALLBACK	1
