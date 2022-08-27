@@ -132,6 +132,9 @@ void DXRVoxelizer::LoadPipeline()
 	m_depth = DepthStencil::MakeUnique();
 	XUSG_N_RETURN(m_depth->Create(m_device.get(), m_width, m_height, Format::D24_UNORM_S8_UINT,
 		ResourceFlag::DENY_SHADER_RESOURCE), ThrowIfFailed(E_FAIL));
+
+	// Create descriptor table cache.
+	m_descriptorTableCache = DescriptorTableCache::MakeShared(m_device.get(), L"DescriptorTableCache");
 }
 
 // Load the sample assets.
@@ -156,9 +159,9 @@ void DXRVoxelizer::LoadAssets()
 	GeometryBuffer geometries[2];
 
 	m_voxelizer = make_unique<Voxelizer>();
-	XUSG_N_RETURN(m_voxelizer->Init(pCommandList, m_width, m_height, m_renderTargets[0]->GetFormat(),
-		m_depth->GetFormat(), uploaders, &geometries[0], m_meshFileName.c_str(),
-		m_meshPosScale), ThrowIfFailed(E_FAIL));
+	XUSG_N_RETURN(m_voxelizer->Init(pCommandList, m_descriptorTableCache, m_width, m_height,
+		m_renderTargets[0]->GetFormat(), m_depth->GetFormat(), uploaders, &geometries[0],
+		m_meshFileName.c_str(), m_meshPosScale), ThrowIfFailed(E_FAIL));
 
 	m_voxelizerEZ = make_unique<VoxelizerEZ>();
 	XUSG_N_RETURN(m_voxelizerEZ->Init(m_commandListEZ.get(),
@@ -380,6 +383,13 @@ void DXRVoxelizer::PopulateCommandList()
 		// re-recording.
 		const auto pCommandList = m_commandList.get();
 		XUSG_N_RETURN(pCommandList->Reset(pCommandAllocator, nullptr), ThrowIfFailed(E_FAIL));
+
+		const DescriptorPool descriptorPools[] =
+		{
+			m_descriptorTableCache->GetDescriptorPool(CBV_SRV_UAV_POOL),
+			m_descriptorTableCache->GetDescriptorPool(SAMPLER_POOL)
+		};
+		pCommandList->SetDescriptorPools(static_cast<uint32_t>(size(descriptorPools)), descriptorPools);
 
 		ResourceBarrier barrier;
 		auto numBarriers = renderTarget->SetBarrier(&barrier, ResourceState::RENDER_TARGET);

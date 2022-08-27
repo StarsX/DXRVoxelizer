@@ -13,8 +13,8 @@ public:
 	Voxelizer();
 	virtual ~Voxelizer();
 
-	bool Init(XUSG::RayTracing::CommandList* pCommandList, uint32_t width, uint32_t height,
-		XUSG::Format rtFormat, XUSG::Format dsFormat, std::vector<XUSG::Resource::uptr>& uploaders,
+	bool Init(XUSG::RayTracing::CommandList* pCommandList, const XUSG::DescriptorTableCache::sptr& descriptorTableCache,
+		uint32_t width, uint32_t height, XUSG::Format rtFormat, XUSG::Format dsFormat, std::vector<XUSG::Resource::uptr>& uploaders,
 		XUSG::RayTracing::GeometryBuffer* pGeometry, const char* fileName, const DirectX::XMFLOAT4& posScale);
 
 	void UpdateFrame(uint8_t frameIndex, DirectX::CXMVECTOR eyePt, DirectX::CXMMATRIX viewProj);
@@ -126,7 +126,7 @@ protected:
 	XUSG::Graphics::PipelineCache::uptr		m_graphicsPipelineCache;
 	XUSG::Compute::PipelineCache::uptr		m_computePipelineCache;
 	XUSG::PipelineLayoutCache::uptr			m_pipelineLayoutCache;
-	XUSG::DescriptorTableCache::uptr		m_descriptorTableCache;
+	XUSG::DescriptorTableCache::sptr		m_descriptorTableCache;
 
 	DirectX::XMFLOAT2				m_viewport;
 	DirectX::XMFLOAT4				m_bound;
