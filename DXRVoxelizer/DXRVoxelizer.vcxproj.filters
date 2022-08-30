@@ -31,9 +31,6 @@
     <Filter Include="XUSG\Optional">
       <UniqueIdentifier>{da357f3d-d9e8-4f2c-8605-1154608b49d6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="XUSG\Helper">
-      <UniqueIdentifier>{1ac4bc9a-9929-43f6-97bf-174055692b53}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
