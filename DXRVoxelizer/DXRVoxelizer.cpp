@@ -370,7 +370,7 @@ void DXRVoxelizer::PopulateCommandList()
 		const auto pCommandList = m_commandListEZ.get();
 		XUSG_N_RETURN(pCommandList->Reset(pCommandAllocator, nullptr), ThrowIfFailed(E_FAIL));
 
-		auto dsv = XUSG::EZ::GetDSV(m_depth.get());
+		const auto dsv = XUSG::EZ::GetDSV(m_depth.get());
 		pCommandList->ClearDepthStencilView(dsv, ClearFlag::DEPTH, 1.0f);
 		m_voxelizerEZ->Render(pCommandList, m_frameIndex, renderTarget, m_depth.get());
 
