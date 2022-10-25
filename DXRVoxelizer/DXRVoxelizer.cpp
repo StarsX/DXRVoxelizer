@@ -151,9 +151,11 @@ void DXRVoxelizer::LoadAssets()
 
 	// TODO: create m_commandListEZ.
 	AccelerationStructure::SetUAVCount(2);
+	const uint32_t maxSrvSpaces[Shader::Stage::NUM_STAGE] = { 1, 1, 0, 0, 0, 2 };
 	m_commandListEZ = RayTracing::EZ::CommandList::MakeUnique();
-	XUSG_N_RETURN(m_commandListEZ->Create(m_commandList.get(), 1, 16, 16,
-		nullptr, nullptr, nullptr, 1, 2, 1, 1, 2), ThrowIfFailed(E_FAIL));
+	XUSG_N_RETURN(m_commandListEZ->Create(m_commandList.get(), 1, 16, nullptr,
+		nullptr, nullptr, nullptr, nullptr, maxSrvSpaces, nullptr, 1, 2),
+		ThrowIfFailed(E_FAIL));
 
 	vector<Resource::uptr> uploaders(0);
 	GeometryBuffer geometries[2];
@@ -374,7 +376,7 @@ void DXRVoxelizer::PopulateCommandList()
 		pCommandList->ClearDepthStencilView(dsv, ClearFlag::DEPTH, 1.0f);
 		m_voxelizerEZ->Render(pCommandList, m_frameIndex, renderTarget, m_depth.get());
 
-		XUSG_N_RETURN(pCommandList->CloseForPresent(renderTarget), ThrowIfFailed(E_FAIL));
+		XUSG_N_RETURN(pCommandList->Close(renderTarget), ThrowIfFailed(E_FAIL));
 	}
 	else
 	{
