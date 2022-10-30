@@ -13,7 +13,7 @@ public:
 	Voxelizer();
 	virtual ~Voxelizer();
 
-	bool Init(XUSG::RayTracing::CommandList* pCommandList, const XUSG::DescriptorTableCache::sptr& descriptorTableCache,
+	bool Init(XUSG::RayTracing::CommandList* pCommandList, const XUSG::DescriptorTableLib::sptr& descriptorTableCache,
 		uint32_t width, uint32_t height, XUSG::Format rtFormat, XUSG::Format dsFormat, std::vector<XUSG::Resource::uptr>& uploaders,
 		XUSG::RayTracing::GeometryBuffer* pGeometry, const char* fileName, const DirectX::XMFLOAT4& posScale);
 
@@ -121,14 +121,14 @@ protected:
 	XUSG::RayTracing::ShaderTable::uptr	m_hitGroupShaderTable;
 	XUSG::RayTracing::ShaderTable::uptr	m_rayGenShaderTable;
 
-	XUSG::ShaderPool::uptr					m_shaderPool;
-	XUSG::RayTracing::PipelineCache::uptr	m_rayTracingPipelineCache;
-	XUSG::Graphics::PipelineCache::uptr		m_graphicsPipelineCache;
-	XUSG::Compute::PipelineCache::uptr		m_computePipelineCache;
-	XUSG::PipelineLayoutCache::uptr			m_pipelineLayoutCache;
-	XUSG::DescriptorTableCache::sptr		m_descriptorTableCache;
+	XUSG::ShaderLib::uptr				m_shaderLib;
+	XUSG::RayTracing::PipelineLib::uptr	m_rayTracingPipelineLib;
+	XUSG::Graphics::PipelineLib::uptr	m_graphicsPipelineLib;
+	XUSG::Compute::PipelineLib::uptr	m_computePipelineLib;
+	XUSG::PipelineLayoutLib::uptr		m_pipelineLayoutLib;
+	XUSG::DescriptorTableLib::sptr		m_descriptorTableLib;
 
-	DirectX::XMFLOAT2				m_viewport;
-	DirectX::XMFLOAT4				m_bound;
-	DirectX::XMFLOAT4				m_posScale;
+	DirectX::XMFLOAT2 m_viewport;
+	DirectX::XMFLOAT4 m_bound;
+	DirectX::XMFLOAT4 m_posScale;
 };

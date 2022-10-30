@@ -20,23 +20,23 @@ const wchar_t* Voxelizer::MissShaderName = L"missMain";
 Voxelizer::Voxelizer() :
 	m_instances()
 {
-	m_shaderPool = ShaderPool::MakeUnique();
+	m_shaderLib = ShaderLib::MakeUnique();
 }
 
 Voxelizer::~Voxelizer()
 {
 }
 
-bool Voxelizer::Init(RayTracing::CommandList* pCommandList, const XUSG::DescriptorTableCache::sptr& descriptorTableCache,
+bool Voxelizer::Init(RayTracing::CommandList* pCommandList, const XUSG::DescriptorTableLib::sptr& descriptorTableLib,
 	uint32_t width, uint32_t height, Format rtFormat, Format dsFormat, vector<Resource::uptr>& uploaders,
 	GeometryBuffer* pGeometry, const char* fileName, const XMFLOAT4& posScale)
 {
 	const auto pDevice = pCommandList->GetRTDevice();
-	m_rayTracingPipelineCache = RayTracing::PipelineCache::MakeUnique(pDevice);
-	m_graphicsPipelineCache = Graphics::PipelineCache::MakeUnique(pDevice);
-	m_computePipelineCache = Compute::PipelineCache::MakeUnique(pDevice);
-	m_pipelineLayoutCache = PipelineLayoutCache::MakeUnique(pDevice);
-	m_descriptorTableCache = descriptorTableCache;
+	m_rayTracingPipelineLib = RayTracing::PipelineLib::MakeUnique(pDevice);
+	m_graphicsPipelineLib = Graphics::PipelineLib::MakeUnique(pDevice);
+	m_computePipelineLib = Compute::PipelineLib::MakeUnique(pDevice);
+	m_pipelineLayoutLib = PipelineLayoutLib::MakeUnique(pDevice);
+	m_descriptorTableLib = descriptorTableLib;
 
 	m_viewport.x = static_cast<float>(width);
 	m_viewport.y = static_cast<float>(height);
@@ -151,7 +151,7 @@ bool Voxelizer::createPipelineLayouts(const RayTracing::Device* pDevice)
 		pipelineLayout->SetRange(VERTEX_BUFFERS, DescriptorType::SRV, 1, 0, 1);
 		pipelineLayout->SetRootSRV(ACCELERATION_STRUCTURE, 0, 2, DescriptorFlag::DATA_STATIC);
 		XUSG_X_RETURN(m_pipelineLayouts[GLOBAL_LAYOUT], pipelineLayout->GetPipelineLayout(
-			pDevice, m_pipelineLayoutCache.get(), PipelineLayoutFlag::NONE,
+			pDevice, m_pipelineLayoutLib.get(), PipelineLayoutFlag::NONE,
 			L"RayTracerGlobalPipelineLayout"), false);
 	}
 
@@ -165,7 +165,7 @@ bool Voxelizer::createPipelineLayouts(const RayTracing::Device* pDevice)
 		pipelineLayout->SetShaderStage(1, Shader::Stage::PS);
 		pipelineLayout->SetShaderStage(2, Shader::Stage::PS);
 		XUSG_X_RETURN(m_pipelineLayouts[RAY_CAST_LAYOUT], pipelineLayout->GetPipelineLayout(
-			m_pipelineLayoutCache.get(), PipelineLayoutFlag::NONE, L"RayCastLayout"), false);
+			m_pipelineLayoutLib.get(), PipelineLayoutFlag::NONE, L"RayCastLayout"), false);
 	}
 
 	return true;
@@ -174,31 +174,33 @@ bool Voxelizer::createPipelineLayouts(const RayTracing::Device* pDevice)
 bool Voxelizer::createPipelines(Format rtFormat, Format dsFormat)
 {
 	{
-		XUSG_N_RETURN(m_shaderPool->CreateShader(Shader::Stage::CS, 0, L"DXRVoxelizer.cso"), false);
+		XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::CS, 0, L"DXRVoxelizer.cso"), false);
+		const void* shaders[] = { RaygenShaderName, ClosestHitShaderName, MissShaderName };
 
 		const auto state = RayTracing::State::MakeUnique();
-		state->SetShaderLibrary(m_shaderPool->GetShader(Shader::Stage::CS, 0));
+		state->SetShaderLibrary(0, m_shaderLib->GetShader(Shader::Stage::CS, 0),
+			static_cast<uint32_t>(size(shaders)), shaders);
 		state->SetHitGroup(0, HitGroupName, ClosestHitShaderName);
 		state->SetShaderConfig(sizeof(XMFLOAT4), sizeof(XMFLOAT2));
 		//state->SetLocalPipelineLayout(0, m_pipelineLayouts[RAY_GEN_LAYOUT],
 			//1, reinterpret_cast<const void**>(&RaygenShaderName));
 		state->SetGlobalPipelineLayout(m_pipelineLayouts[GLOBAL_LAYOUT]);
 		state->SetMaxRecursionDepth(1);
-		XUSG_X_RETURN(m_pipelines[RAY_TRACING], state->GetPipeline(m_rayTracingPipelineCache.get(), L"Raytracing"), false);
+		XUSG_X_RETURN(m_pipelines[RAY_TRACING], state->GetPipeline(m_rayTracingPipelineLib.get(), L"Raytracing"), false);
 	}
 
 	{
-		XUSG_N_RETURN(m_shaderPool->CreateShader(Shader::Stage::VS, VS_SCREEN_QUAD, L"VSScreenQuad.cso"), false);
-		XUSG_N_RETURN(m_shaderPool->CreateShader(Shader::Stage::PS, PS_RAY_CAST, L"PSRayCast.cso"), false);
+		XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::VS, VS_SCREEN_QUAD, L"VSScreenQuad.cso"), false);
+		XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::PS, PS_RAY_CAST, L"PSRayCast.cso"), false);
 
 		const auto state = Graphics::State::MakeUnique();
 		state->SetPipelineLayout(m_pipelineLayouts[RAY_CAST_LAYOUT]);
-		state->SetShader(Shader::Stage::VS, m_shaderPool->GetShader(Shader::Stage::VS, VS_SCREEN_QUAD));
-		state->SetShader(Shader::Stage::PS, m_shaderPool->GetShader(Shader::Stage::PS, PS_RAY_CAST));
+		state->SetShader(Shader::Stage::VS, m_shaderLib->GetShader(Shader::Stage::VS, VS_SCREEN_QUAD));
+		state->SetShader(Shader::Stage::PS, m_shaderLib->GetShader(Shader::Stage::PS, PS_RAY_CAST));
 		state->IASetPrimitiveTopologyType(PrimitiveTopologyType::TRIANGLE);
-		state->DSSetState(Graphics::DepthStencilPreset::DEPTH_STENCIL_NONE, m_graphicsPipelineCache.get());
+		state->DSSetState(Graphics::DepthStencilPreset::DEPTH_STENCIL_NONE, m_graphicsPipelineLib.get());
 		state->OMSetRTVFormats(&rtFormat, 1);
-		XUSG_X_RETURN(m_pipelines[RAY_CAST], state->GetPipeline(m_graphicsPipelineCache.get(), L"RayCast"), false);
+		XUSG_X_RETURN(m_pipelines[RAY_CAST], state->GetPipeline(m_graphicsPipelineLib.get(), L"RayCast"), false);
 	}
 
 	return true;
@@ -211,7 +213,7 @@ bool Voxelizer::createDescriptorTables()
 		Descriptor descriptors[] = { m_bottomLevelAS->GetResult()->GetUAV(), m_topLevelAS->GetResult()->GetUAV() };
 		const auto descriptorTable = Util::DescriptorTable::MakeUnique();
 		descriptorTable->SetDescriptors(0, static_cast<uint32_t>(size(descriptors)), descriptors);
-		const auto asTable = descriptorTable->GetCbvSrvUavTable(m_descriptorTableCache.get());
+		const auto asTable = descriptorTable->GetCbvSrvUavTable(m_descriptorTableLib.get());
 		XUSG_N_RETURN(asTable, false);
 	}
 
@@ -220,21 +222,21 @@ bool Voxelizer::createDescriptorTables()
 		// Output UAV
 		const auto descriptorTable = Util::DescriptorTable::MakeUnique();
 		descriptorTable->SetDescriptors(0, 1, &m_grids[i]->GetUAV());
-		XUSG_X_RETURN(m_uavTables[i], descriptorTable->GetCbvSrvUavTable(m_descriptorTableCache.get()), false);
+		XUSG_X_RETURN(m_uavTables[i], descriptorTable->GetCbvSrvUavTable(m_descriptorTableLib.get()), false);
 	}
 
 	// Index buffer SRV
 	{
 		const auto descriptorTable = Util::DescriptorTable::MakeUnique();
 		descriptorTable->SetDescriptors(0, 1, &m_indexBuffer->GetSRV());
-		XUSG_X_RETURN(m_srvTables[SRV_TABLE_IB], descriptorTable->GetCbvSrvUavTable(m_descriptorTableCache.get()), false);
+		XUSG_X_RETURN(m_srvTables[SRV_TABLE_IB], descriptorTable->GetCbvSrvUavTable(m_descriptorTableLib.get()), false);
 	}
 
 	// Vertex buffer SRV
 	{
 		const auto descriptorTable = Util::DescriptorTable::MakeUnique();
 		descriptorTable->SetDescriptors(0, 1, &m_vertexBuffer->GetSRV());
-		XUSG_X_RETURN(m_srvTables[SRV_TABLE_VB], descriptorTable->GetCbvSrvUavTable(m_descriptorTableCache.get()), false);
+		XUSG_X_RETURN(m_srvTables[SRV_TABLE_VB], descriptorTable->GetCbvSrvUavTable(m_descriptorTableLib.get()), false);
 	}
 
 	// Ray cast
@@ -243,14 +245,14 @@ bool Voxelizer::createDescriptorTables()
 		// Get CBV
 		const auto descriptorTable = Util::DescriptorTable::MakeUnique();
 		descriptorTable->SetDescriptors(0, 1, &m_cbPerObject->GetCBV(i));
-		XUSG_X_RETURN(m_cbvTables[i], descriptorTable->GetCbvSrvUavTable(m_descriptorTableCache.get()), false);
+		XUSG_X_RETURN(m_cbvTables[i], descriptorTable->GetCbvSrvUavTable(m_descriptorTableLib.get()), false);
 
 		// Get SRV
 		if (!m_srvTables[SRV_TABLE_GRID + i])
 		{
 			const auto descriptorTable = Util::DescriptorTable::MakeUnique();
 			descriptorTable->SetDescriptors(0, 1, &m_grids[i]->GetSRV());
-			XUSG_X_RETURN(m_srvTables[SRV_TABLE_GRID + i], descriptorTable->GetCbvSrvUavTable(m_descriptorTableCache.get()), false);
+			XUSG_X_RETURN(m_srvTables[SRV_TABLE_GRID + i], descriptorTable->GetCbvSrvUavTable(m_descriptorTableLib.get()), false);
 		}
 	}
 
@@ -258,8 +260,8 @@ bool Voxelizer::createDescriptorTables()
 	{
 		const auto descriptorTable = Util::DescriptorTable::MakeUnique();
 		const auto sampler = LINEAR_CLAMP;
-		descriptorTable->SetSamplers(0, 1, &sampler, m_descriptorTableCache.get());
-		XUSG_X_RETURN(m_samplerTable, descriptorTable->GetSamplerTable(m_descriptorTableCache.get()), false);
+		descriptorTable->SetSamplers(0, 1, &sampler, m_descriptorTableLib.get());
+		XUSG_X_RETURN(m_samplerTable, descriptorTable->GetSamplerTable(m_descriptorTableLib.get()), false);
 	}
 
 	return true;
@@ -292,7 +294,7 @@ bool Voxelizer::buildAccelerationStructures(RayTracing::CommandList* pCommandLis
 
 	// Get descriptor pool and create descriptor tables
 	XUSG_N_RETURN(createDescriptorTables(), false);
-	const auto& descriptorPool = m_descriptorTableCache->GetDescriptorPool(CBV_SRV_UAV_POOL);
+	const auto& descriptorPool = m_descriptorTableLib->GetDescriptorPool(CBV_SRV_UAV_POOL);
 
 	// Set instance
 	XMFLOAT3X4 matrix;

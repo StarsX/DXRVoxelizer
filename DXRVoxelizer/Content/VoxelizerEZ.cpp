@@ -20,7 +20,7 @@ const wchar_t* VoxelizerEZ::MissShaderName = L"missMain";
 VoxelizerEZ::VoxelizerEZ() :
 	m_instances()
 {
-	m_shaderPool = ShaderPool::MakeUnique();
+	m_shaderLib = ShaderLib::MakeUnique();
 }
 
 VoxelizerEZ::~VoxelizerEZ()
@@ -135,14 +135,14 @@ bool VoxelizerEZ::createShaders()
 	auto psIndex = 0u;
 	auto csIndex = 0u;
 
-	XUSG_N_RETURN(m_shaderPool->CreateShader(Shader::Stage::VS, vsIndex, L"VSScreenQuad.cso"), false);
-	m_shaders[VS_SCREEN_QUAD] = m_shaderPool->GetShader(Shader::Stage::VS, vsIndex++);
+	XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::VS, vsIndex, L"VSScreenQuad.cso"), false);
+	m_shaders[VS_SCREEN_QUAD] = m_shaderLib->GetShader(Shader::Stage::VS, vsIndex++);
 
-	XUSG_N_RETURN(m_shaderPool->CreateShader(Shader::Stage::PS, psIndex, L"PSRayCast.cso"), false);
-	m_shaders[PS_RAY_CAST] = m_shaderPool->GetShader(Shader::Stage::PS, psIndex++);
+	XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::PS, psIndex, L"PSRayCast.cso"), false);
+	m_shaders[PS_RAY_CAST] = m_shaderLib->GetShader(Shader::Stage::PS, psIndex++);
 
-	XUSG_N_RETURN(m_shaderPool->CreateShader(Shader::Stage::CS, csIndex, L"DXRVoxelizer.cso"), false);
-	m_shaders[DXR_VOXELIZER] = m_shaderPool->GetShader(Shader::Stage::CS, csIndex++);
+	XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::CS, csIndex, L"DXRVoxelizer.cso"), false);
+	m_shaders[DXR_VOXELIZER] = m_shaderLib->GetShader(Shader::Stage::CS, csIndex++);
 
 	return true;
 }
@@ -184,7 +184,8 @@ bool VoxelizerEZ::buildAccelerationStructures(RayTracing::EZ::CommandList* pComm
 void VoxelizerEZ::voxelize(RayTracing::EZ::CommandList* pCommandList, uint8_t frameIndex)
 {
 	// Set pipeline state
-	pCommandList->RTSetShaderLibrary(m_shaders[DXR_VOXELIZER]);
+	const void* shaders[] = { RaygenShaderName, ClosestHitShaderName, MissShaderName };
+	pCommandList->RTSetShaderLibrary(0, m_shaders[DXR_VOXELIZER], static_cast<uint32_t>(size(shaders)), shaders);
 	pCommandList->RTSetHitGroup(0, HitGroupName, ClosestHitShaderName);
 	pCommandList->RTSetShaderConfig(sizeof(XMFLOAT4), sizeof(XMFLOAT2));
 	pCommandList->RTSetMaxRecursionDepth(1);

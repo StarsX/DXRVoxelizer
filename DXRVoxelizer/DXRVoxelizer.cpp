@@ -133,8 +133,8 @@ void DXRVoxelizer::LoadPipeline()
 	XUSG_N_RETURN(m_depth->Create(m_device.get(), m_width, m_height, Format::D24_UNORM_S8_UINT,
 		ResourceFlag::DENY_SHADER_RESOURCE), ThrowIfFailed(E_FAIL));
 
-	// Create descriptor table cache.
-	m_descriptorTableCache = DescriptorTableCache::MakeShared(m_device.get(), L"DescriptorTableCache");
+	// Create descriptor-table lib.
+	m_descriptorTableLib = DescriptorTableLib::MakeShared(m_device.get(), L"DescriptorTableLib");
 }
 
 // Load the sample assets.
@@ -161,7 +161,7 @@ void DXRVoxelizer::LoadAssets()
 	GeometryBuffer geometries[2];
 
 	m_voxelizer = make_unique<Voxelizer>();
-	XUSG_N_RETURN(m_voxelizer->Init(pCommandList, m_descriptorTableCache, m_width, m_height,
+	XUSG_N_RETURN(m_voxelizer->Init(pCommandList, m_descriptorTableLib, m_width, m_height,
 		m_renderTargets[0]->GetFormat(), m_depth->GetFormat(), uploaders, &geometries[0],
 		m_meshFileName.c_str(), m_meshPosScale), ThrowIfFailed(E_FAIL));
 
@@ -388,8 +388,8 @@ void DXRVoxelizer::PopulateCommandList()
 
 		const DescriptorPool descriptorPools[] =
 		{
-			m_descriptorTableCache->GetDescriptorPool(CBV_SRV_UAV_POOL),
-			m_descriptorTableCache->GetDescriptorPool(SAMPLER_POOL)
+			m_descriptorTableLib->GetDescriptorPool(CBV_SRV_UAV_POOL),
+			m_descriptorTableLib->GetDescriptorPool(SAMPLER_POOL)
 		};
 		pCommandList->SetDescriptorPools(static_cast<uint32_t>(size(descriptorPools)), descriptorPools);
 

@@ -48,7 +48,7 @@ private:
 	static const uint8_t FrameCount = Voxelizer::FrameCount;
 
 	// Pipeline objects.
-	XUSG::DescriptorTableCache::sptr m_descriptorTableCache;
+	XUSG::DescriptorTableLib::sptr m_descriptorTableLib;
 
 	XUSG::Viewport			m_viewport;
 	XUSG::RectRange			m_scissorRect;
