@@ -184,7 +184,7 @@ bool VoxelizerEZ::buildAccelerationStructures(RayTracing::EZ::CommandList* pComm
 void VoxelizerEZ::voxelize(RayTracing::EZ::CommandList* pCommandList, uint8_t frameIndex)
 {
 	// Set pipeline state
-	const void* shaders[] = { RaygenShaderName, ClosestHitShaderName, MissShaderName };
+	static const void* shaders[] = { RaygenShaderName, ClosestHitShaderName, MissShaderName };
 	pCommandList->RTSetShaderLibrary(0, m_shaders[DXR_VOXELIZER], static_cast<uint32_t>(size(shaders)), shaders);
 	pCommandList->RTSetHitGroup(0, HitGroupName, ClosestHitShaderName);
 	pCommandList->RTSetShaderConfig(sizeof(XMFLOAT4), sizeof(XMFLOAT2));
