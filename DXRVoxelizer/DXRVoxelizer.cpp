@@ -386,12 +386,12 @@ void DXRVoxelizer::PopulateCommandList()
 		const auto pCommandList = m_commandList.get();
 		XUSG_N_RETURN(pCommandList->Reset(pCommandAllocator, nullptr), ThrowIfFailed(E_FAIL));
 
-		const DescriptorPool descriptorPools[] =
+		const DescriptorHeap descriptorHeaps[] =
 		{
-			m_descriptorTableLib->GetDescriptorPool(CBV_SRV_UAV_POOL),
-			m_descriptorTableLib->GetDescriptorPool(SAMPLER_POOL)
+			m_descriptorTableLib->GetDescriptorHeap(CBV_SRV_UAV_HEAP),
+			m_descriptorTableLib->GetDescriptorHeap(SAMPLER_HEAP)
 		};
-		pCommandList->SetDescriptorPools(static_cast<uint32_t>(size(descriptorPools)), descriptorPools);
+		pCommandList->SetDescriptorHeaps(static_cast<uint32_t>(size(descriptorHeaps)), descriptorHeaps);
 
 		ResourceBarrier barrier;
 		auto numBarriers = renderTarget->SetBarrier(&barrier, ResourceState::RENDER_TARGET);
