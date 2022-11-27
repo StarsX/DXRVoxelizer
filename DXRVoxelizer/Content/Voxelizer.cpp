@@ -276,7 +276,7 @@ bool Voxelizer::buildAccelerationStructures(RayTracing::CommandList* pCommandLis
 	BottomLevelAS::SetTriangleGeometries(*pGeometry, 1, Format::R32G32B32_FLOAT,
 		&m_vertexBuffer->GetVBV(), &m_indexBuffer->GetIBV());
 
-	// Descriptor index in descriptor pool
+	// Descriptor index in descriptor heap
 	const auto bottomLevelASIndex = 0u;
 	const auto topLevelASIndex = bottomLevelASIndex + 1;
 
@@ -292,9 +292,9 @@ bool Voxelizer::buildAccelerationStructures(RayTracing::CommandList* pCommandLis
 	m_scratch = Resource::MakeUnique();
 	XUSG_N_RETURN(AccelerationStructure::AllocateUAVBuffer(pDevice, m_scratch.get(), scratchSize), false);
 
-	// Get descriptor pool and create descriptor tables
+	// Get descriptor heap and create descriptor tables
 	XUSG_N_RETURN(createDescriptorTables(), false);
-	const auto& descriptorPool = m_descriptorTableLib->GetDescriptorHeap(CBV_SRV_UAV_HEAP);
+	const auto& descriptorHeap = m_descriptorTableLib->GetDescriptorHeap(CBV_SRV_UAV_HEAP);
 
 	// Set instance
 	XMFLOAT3X4 matrix;
@@ -306,10 +306,10 @@ bool Voxelizer::buildAccelerationStructures(RayTracing::CommandList* pCommandLis
 	TopLevelAS::SetInstances(pDevice, m_instances.get(), 1, ppBottomLevelAS, pTransform);
 
 	// Build bottom level ASs
-	m_bottomLevelAS->Build(pCommandList, m_scratch.get(), descriptorPool);
+	m_bottomLevelAS->Build(pCommandList, m_scratch.get(), descriptorHeap);
 
 	// Build top level AS
-	m_topLevelAS->Build(pCommandList, m_scratch.get(), m_instances.get(), descriptorPool);
+	m_topLevelAS->Build(pCommandList, m_scratch.get(), m_instances.get(), descriptorHeap);
 
 	return true;
 }
