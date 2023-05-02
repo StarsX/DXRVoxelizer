@@ -10,6 +10,7 @@
 //*********************************************************
 
 #include "DXRVoxelizer.h"
+#include "stb_image_write.h"
 
 using namespace std;
 using namespace XUSG;
@@ -262,6 +263,9 @@ void DXRVoxelizer::OnKeyUp(uint8_t key)
 	case VK_F1:
 		m_showFPS = !m_showFPS;
 		break;
+	case VK_F11:
+		m_screenShot = 1;
+		break;
 	case 'X':
 		m_useEZ = !m_useEZ;
 		break;
@@ -363,7 +367,7 @@ void DXRVoxelizer::PopulateCommandList()
 	XUSG_N_RETURN(pCommandAllocator->Reset(), ThrowIfFailed(E_FAIL));
 
 	// Voxelizer rendering
-	const auto renderTarget = m_renderTargets[m_frameIndex].get();
+	const auto pRenderTarget = m_renderTargets[m_frameIndex].get();
 	if (m_useEZ)
 	{
 		// However, when ExecuteCommandList() is called on a particular command 
@@ -374,9 +378,17 @@ void DXRVoxelizer::PopulateCommandList()
 
 		const auto dsv = XUSG::EZ::GetDSV(m_depth.get());
 		pCommandList->ClearDepthStencilView(dsv, ClearFlag::DEPTH, 1.0f);
-		m_voxelizerEZ->Render(pCommandList, m_frameIndex, renderTarget, m_depth.get());
+		m_voxelizerEZ->Render(pCommandList, m_frameIndex, pRenderTarget, m_depth.get());
 
-		XUSG_N_RETURN(pCommandList->Close(renderTarget), ThrowIfFailed(E_FAIL));
+		// Screen-shot helper
+		if (m_screenShot == 1)
+		{
+			if (!m_readBuffer) m_readBuffer = Buffer::MakeUnique();
+			pRenderTarget->ReadBack(pCommandList->AsCommandList(), m_readBuffer.get(), &m_rowPitch);
+			m_screenShot = 2;
+		}
+
+		XUSG_N_RETURN(pCommandList->Close(pRenderTarget), ThrowIfFailed(E_FAIL));
 	}
 	else
 	{
@@ -394,7 +406,7 @@ void DXRVoxelizer::PopulateCommandList()
 		pCommandList->SetDescriptorHeaps(static_cast<uint32_t>(size(descriptorHeaps)), descriptorHeaps);
 
 		ResourceBarrier barrier;
-		auto numBarriers = renderTarget->SetBarrier(&barrier, ResourceState::RENDER_TARGET);
+		auto numBarriers = pRenderTarget->SetBarrier(&barrier, ResourceState::RENDER_TARGET);
 		pCommandList->Barrier(numBarriers, &barrier);
 
 		// Record commands.
@@ -402,11 +414,19 @@ void DXRVoxelizer::PopulateCommandList()
 		//m_commandList.ClearRenderTargetView(*m_rtvTables[m_frameIndex], clearColor);
 		pCommandList->ClearDepthStencilView(m_depth->GetDSV(), ClearFlag::DEPTH, 1.0f);
 
-		m_voxelizer->Render(pCommandList, m_frameIndex, renderTarget->GetRTV(), m_depth->GetDSV());
+		m_voxelizer->Render(pCommandList, m_frameIndex, pRenderTarget->GetRTV(), m_depth->GetDSV());
 
 		// Indicate that the back buffer will now be used to present.
-		numBarriers = renderTarget->SetBarrier(&barrier, ResourceState::PRESENT);
+		numBarriers = pRenderTarget->SetBarrier(&barrier, ResourceState::PRESENT);
 		pCommandList->Barrier(numBarriers, &barrier);
+
+		// Screen-shot helper
+		if (m_screenShot == 1)
+		{
+			if (!m_readBuffer) m_readBuffer = Buffer::MakeUnique();
+			pRenderTarget->ReadBack(pCommandList, m_readBuffer.get(), &m_rowPitch);
+			m_screenShot = 2;
+		}
 
 		XUSG_N_RETURN(pCommandList->Close(), ThrowIfFailed(E_FAIL));
 	}
@@ -442,6 +462,43 @@ void DXRVoxelizer::MoveToNextFrame()
 
 	// Set the fence value for the next frame.
 	m_fenceValues[m_frameIndex] = currentFenceValue + 1;
+
+	// Screen-shot helper
+	if (m_screenShot)
+	{
+		if (m_screenShot > FrameCount)
+		{
+			char timeStr[15];
+			tm dateTime;
+			const auto now = time(nullptr);
+			if (!localtime_s(&dateTime, &now) && strftime(timeStr, sizeof(timeStr), "%Y%m%d%H%M%S", &dateTime))
+				SaveImage((string("DXRVoxelizer_") + timeStr + ".png").c_str(), m_readBuffer.get(), m_width, m_height, m_rowPitch);
+			m_screenShot = 0;
+		}
+		else ++m_screenShot;
+	}
+}
+
+void DXRVoxelizer::SaveImage(char const* fileName, Buffer* imageBuffer, uint32_t w, uint32_t h, uint32_t rowPitch, uint8_t comp)
+{
+	assert(comp == 3 || comp == 4);
+	const auto pData = static_cast<uint8_t*>(imageBuffer->Map(nullptr));
+
+	//stbi_write_png_compression_level = 1024;
+	vector<uint8_t> imageData(comp * w * h);
+	const auto sw = rowPitch / 4;
+	for (auto i = 0u; i < h; ++i)
+		for (auto j = 0u; j < w; ++j)
+		{
+			const auto s = sw * i + j;
+			const auto d = w * i + j;
+			for (uint8_t k = 0; k < comp; ++k)
+				imageData[comp * d + k] = pData[4 * s + k];
+		}
+
+	stbi_write_png(fileName, w, h, comp, imageData.data(), 0);
+
+	m_readBuffer->Unmap();
 }
 
 double DXRVoxelizer::CalculateFrameStats(float* pTimeStep)
@@ -468,6 +525,8 @@ double DXRVoxelizer::CalculateFrameStats(float* pTimeStep)
 		else windowText << L"[F1]";
 
 		windowText << L"    [X] " << (m_useEZ ? "XUSG-EZ" : "XUSGCore");
+		windowText << L"    [F11] screen shot";
+
 		SetCustomWindowText(windowText.str().c_str());
 	}
 
