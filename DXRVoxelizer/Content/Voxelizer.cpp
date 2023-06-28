@@ -210,7 +210,7 @@ bool Voxelizer::createDescriptorTables()
 {
 	// Acceleration structure UAVs
 	{
-		Descriptor descriptors[] = { m_bottomLevelAS->GetResult()->GetUAV(), m_topLevelAS->GetResult()->GetUAV() };
+		Descriptor descriptors[] = { m_bottomLevelAS->GetResource()->GetUAV(), m_topLevelAS->GetResource()->GetUAV() };
 		const auto descriptorTable = Util::DescriptorTable::MakeUnique();
 		descriptorTable->SetDescriptors(0, static_cast<uint32_t>(size(descriptors)), descriptors);
 		const auto asTable = descriptorTable->GetCbvSrvUavTable(m_descriptorTableLib.get());
@@ -269,7 +269,6 @@ bool Voxelizer::createDescriptorTables()
 
 bool Voxelizer::buildAccelerationStructures(RayTracing::CommandList* pCommandList, GeometryBuffer* pGeometry)
 {
-	AccelerationStructure::SetFrameCount(FrameCount);
 	const auto pDevice = pCommandList->GetRTDevice();
 
 	// Set geometries

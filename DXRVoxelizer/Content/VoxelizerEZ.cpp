@@ -150,8 +150,6 @@ bool VoxelizerEZ::createShaders()
 bool VoxelizerEZ::buildAccelerationStructures(RayTracing::EZ::CommandList* pCommandList,
 	const RayTracing::Device* pDevice, GeometryBuffer* pGeometry)
 {
-	AccelerationStructure::SetFrameCount(FrameCount);
-
 	// Set geometries
 	auto vbv = XUSG::EZ::GetVBV(m_vertexBuffer.get());
 	auto ibv = XUSG::EZ::GetIBV(m_indexBuffer.get());
