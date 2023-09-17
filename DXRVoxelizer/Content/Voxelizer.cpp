@@ -53,8 +53,12 @@ bool Voxelizer::Init(RayTracing::CommandList* pCommandList, const XUSG::Descript
 	XUSG_N_RETURN(createPipelines(rtFormat, dsFormat), false);
 
 	// Extract boundary
-	const auto center = objLoader.GetCenter();
-	m_bound = XMFLOAT4(center.x, center.y, center.z, objLoader.GetRadius());
+	const auto& aabb = objLoader.GetAABB();
+	const XMFLOAT3 ext(aabb.Max.x - aabb.Min.x, aabb.Max.y - aabb.Min.y, aabb.Max.z - aabb.Min.z);
+	m_bound.x = (aabb.Max.x + aabb.Min.x) / 2.0f;
+	m_bound.y = (aabb.Max.y + aabb.Min.y) / 2.0f;
+	m_bound.z = (aabb.Max.z + aabb.Min.z) / 2.0f;
+	m_bound.w = (max)(ext.x, (max)(ext.y, ext.z)) / 2.0f;
 
 	XUSG_N_RETURN(createCB(pDevice), false);
 
@@ -175,15 +179,14 @@ bool Voxelizer::createPipelines(Format rtFormat, Format dsFormat)
 {
 	{
 		XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::CS, 0, L"DXRVoxelizer.cso"), false);
-		const void* shaders[] = { RaygenShaderName, ClosestHitShaderName, MissShaderName };
+		const wchar_t* shaderNames[] = { RaygenShaderName, ClosestHitShaderName, MissShaderName };
 
 		const auto state = RayTracing::State::MakeUnique();
 		state->SetShaderLibrary(0, m_shaderLib->GetShader(Shader::Stage::CS, 0),
-			static_cast<uint32_t>(size(shaders)), shaders);
+			static_cast<uint32_t>(size(shaderNames)), shaderNames);
 		state->SetHitGroup(0, HitGroupName, ClosestHitShaderName);
 		state->SetShaderConfig(sizeof(XMFLOAT4), sizeof(XMFLOAT2));
-		//state->SetLocalPipelineLayout(0, m_pipelineLayouts[RAY_GEN_LAYOUT],
-			//1, reinterpret_cast<const void**>(&RaygenShaderName));
+		//state->SetLocalPipelineLayout(0, m_pipelineLayouts[RAY_GEN_LAYOUT], 1, &RaygenShaderName);
 		state->SetGlobalPipelineLayout(m_pipelineLayouts[GLOBAL_LAYOUT]);
 		state->SetMaxRecursionDepth(1);
 		XUSG_X_RETURN(m_pipelines[RAY_TRACING], state->GetPipeline(m_rayTracingPipelineLib.get(), L"Raytracing"), false);
@@ -350,12 +353,9 @@ void Voxelizer::voxelize(RayTracing::CommandList* pCommandList, uint8_t frameInd
 	pCommandList->SetComputeDescriptorTable(INDEX_BUFFERS, m_srvTables[SRV_TABLE_IB]);
 	pCommandList->SetComputeDescriptorTable(VERTEX_BUFFERS, m_srvTables[SRV_TABLE_VB]);
 
-	// Set pipline
-	pCommandList->SetRayTracingPipeline(m_pipelines[RAY_TRACING]);
-
 	// Fallback layer has no depth
-	pCommandList->DispatchRays(GRID_SIZE, GRID_SIZE * GRID_SIZE, 1, m_hitGroupShaderTable.get(),
-		m_missShaderTable.get(), m_rayGenShaderTable.get());
+	pCommandList->DispatchRays(m_pipelines[RAY_TRACING], GRID_SIZE, GRID_SIZE * GRID_SIZE, 1,
+		m_rayGenShaderTable.get(), m_hitGroupShaderTable.get(), m_missShaderTable.get());
 }
 
 void Voxelizer::renderRayCast(RayTracing::CommandList* pCommandList, uint8_t frameIndex,

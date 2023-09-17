@@ -44,8 +44,12 @@ bool VoxelizerEZ::Init(RayTracing::EZ::CommandList* pCommandList, uint32_t width
 	XUSG_N_RETURN(createIB(pCommandList, objLoader.GetNumIndices(), objLoader.GetIndices(), uploaders), false);
 
 	// Extract boundary
-	const auto center = objLoader.GetCenter();
-	m_bound = XMFLOAT4(center.x, center.y, center.z, objLoader.GetRadius());
+	const auto& aabb = objLoader.GetAABB();
+	const XMFLOAT3 ext(aabb.Max.x - aabb.Min.x, aabb.Max.y - aabb.Min.y, aabb.Max.z - aabb.Min.z);
+	m_bound.x = (aabb.Max.x + aabb.Min.x) / 2.0f;
+	m_bound.y = (aabb.Max.y + aabb.Min.y) / 2.0f;
+	m_bound.z = (aabb.Max.z + aabb.Min.z) / 2.0f;
+	m_bound.w = (max)(ext.x, (max)(ext.y, ext.z)) / 2.0f;
 
 	XUSG_N_RETURN(createCB(pDevice), false);
 
@@ -182,8 +186,8 @@ bool VoxelizerEZ::buildAccelerationStructures(RayTracing::EZ::CommandList* pComm
 void VoxelizerEZ::voxelize(RayTracing::EZ::CommandList* pCommandList, uint8_t frameIndex)
 {
 	// Set pipeline state
-	static const void* shaders[] = { RaygenShaderName, ClosestHitShaderName, MissShaderName };
-	pCommandList->RTSetShaderLibrary(0, m_shaders[DXR_VOXELIZER], static_cast<uint32_t>(size(shaders)), shaders);
+	static const wchar_t* shaderNames[] = { RaygenShaderName, ClosestHitShaderName, MissShaderName };
+	pCommandList->RTSetShaderLibrary(0, m_shaders[DXR_VOXELIZER], static_cast<uint32_t>(size(shaderNames)), shaderNames);
 	pCommandList->RTSetHitGroup(0, HitGroupName, ClosestHitShaderName);
 	pCommandList->RTSetShaderConfig(sizeof(XMFLOAT4), sizeof(XMFLOAT2));
 	pCommandList->RTSetMaxRecursionDepth(1);
