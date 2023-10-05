@@ -209,8 +209,8 @@ void VoxelizerEZ::voxelize(RayTracing::EZ::CommandList* pCommandList, uint8_t fr
 	pCommandList->SetResources(Shader::Stage::CS, DescriptorType::SRV, 0, 1, &srvs[1], 1);
 
 	// Dispatch command
-	pCommandList->DispatchRays(GRID_SIZE, GRID_SIZE * GRID_SIZE, 1, RaygenShaderName,
-		MissShaderName);
+	pCommandList->DispatchRays(GRID_SIZE, GRID_SIZE * GRID_SIZE, 1,
+		RaygenShaderName, &MissShaderName, 1);
 }
 
 void VoxelizerEZ::renderRayCast(RayTracing::EZ::CommandList* pCommandList, uint8_t frameIndex,
