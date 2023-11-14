@@ -278,15 +278,18 @@ bool Voxelizer::buildAccelerationStructures(RayTracing::CommandList* pCommandLis
 	BottomLevelAS::SetTriangleGeometries(*pGeometry, 1, Format::R32G32B32_FLOAT,
 		&m_vertexBuffer->GetVBV(), &m_indexBuffer->GetIBV());
 
-	// Descriptor index in descriptor heap
-	const auto bottomLevelASIndex = 0u;
-	const auto topLevelASIndex = bottomLevelASIndex + 1;
-
 	// Prebuild
 	m_bottomLevelAS = BottomLevelAS::MakeUnique();
 	m_topLevelAS = TopLevelAS::MakeUnique();
-	XUSG_N_RETURN(m_bottomLevelAS->PreBuild(pDevice, 1, *pGeometry, bottomLevelASIndex), false);
-	XUSG_N_RETURN(m_topLevelAS->PreBuild(pDevice, 1, topLevelASIndex), false);
+	XUSG_N_RETURN(m_bottomLevelAS->PreBuild(pDevice, 1, *pGeometry), false);
+	XUSG_N_RETURN(m_topLevelAS->PreBuild(pDevice, 1), false);
+
+	// Allocate AS buffers
+	// Descriptor indices in the descriptor heap
+	const auto bottomLevelASIndex = 0u;
+	const auto topLevelASIndex = bottomLevelASIndex + 1;
+	XUSG_N_RETURN(m_bottomLevelAS->Allocate(pDevice, bottomLevelASIndex), false);
+	XUSG_N_RETURN(m_topLevelAS->Allocate(pDevice, topLevelASIndex), false);
 
 	// Create scratch buffer
 	auto scratchSize = m_topLevelAS->GetScratchDataMaxSize();
@@ -302,13 +305,16 @@ bool Voxelizer::buildAccelerationStructures(RayTracing::CommandList* pCommandLis
 	XMFLOAT3X4 matrix;
 	const auto normalizedToLocal = XMMatrixScaling(m_bound.w, m_bound.w, m_bound.w) * XMMatrixTranslation(m_bound.x, m_bound.y, m_bound.z);
 	XMStoreFloat3x4(&matrix, XMMatrixInverse(nullptr, normalizedToLocal));
-	float* const pTransform[] = { reinterpret_cast<float*>(&matrix) };
+	const float* const pTransform[] = { reinterpret_cast<const float*>(&matrix) };
 	m_instances = Resource::MakeUnique();
 	const BottomLevelAS* ppBottomLevelAS[] = { m_bottomLevelAS.get() };
 	TopLevelAS::SetInstances(pDevice, m_instances.get(), 1, ppBottomLevelAS, pTransform);
 
-	// Build bottom level ASs
-	m_bottomLevelAS->Build(pCommandList, m_scratch.get(), descriptorHeap);
+	// Build bottom level AS
+	m_bottomLevelAS->Build(pCommandList, m_scratch.get());
+
+	const ResourceBarrier barrier = { nullptr, ResourceState::UNORDERED_ACCESS };
+	pCommandList->Barrier(1, &barrier);
 
 	// Build top level AS
 	m_topLevelAS->Build(pCommandList, m_scratch.get(), m_instances.get(), descriptorHeap);

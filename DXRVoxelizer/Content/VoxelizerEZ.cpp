@@ -165,16 +165,20 @@ bool VoxelizerEZ::buildAccelerationStructures(RayTracing::EZ::CommandList* pComm
 	XUSG_N_RETURN(pCommandList->PreBuildBLAS(m_bottomLevelAS.get(), 1, *pGeometry), false);
 	XUSG_N_RETURN(pCommandList->PreBuildTLAS(m_topLevelAS.get(), 1), false);
 
+	// Allocate AS buffers
+	XUSG_N_RETURN(pCommandList->AllocateAccelerationStructure(m_bottomLevelAS.get()), false);
+	XUSG_N_RETURN(pCommandList->AllocateAccelerationStructure(m_topLevelAS.get()), false);
+
 	// Set instance
 	XMFLOAT3X4 matrix;
 	const auto normalizedToLocal = XMMatrixScaling(m_bound.w, m_bound.w, m_bound.w) * XMMatrixTranslation(m_bound.x, m_bound.y, m_bound.z);
 	XMStoreFloat3x4(&matrix, XMMatrixInverse(nullptr, normalizedToLocal));
-	float* const pTransform[] = { reinterpret_cast<float*>(&matrix) };
+	const float* const pTransform[] = { reinterpret_cast<const float*>(&matrix) };
 	m_instances = Resource::MakeUnique();
 	const BottomLevelAS* const ppBottomLevelAS[] = { m_bottomLevelAS.get() };
 	TopLevelAS::SetInstances(pDevice, m_instances.get(), 1, &ppBottomLevelAS[0], &pTransform[0]);
 
-	// Build bottom level ASs
+	// Build bottom level AS
 	pCommandList->BuildBLAS(m_bottomLevelAS.get());
 
 	// Build top level AS
