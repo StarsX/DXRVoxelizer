@@ -162,8 +162,8 @@ bool VoxelizerEZ::buildAccelerationStructures(RayTracing::EZ::CommandList* pComm
 	// Prebuild
 	m_bottomLevelAS = BottomLevelAS::MakeUnique();
 	m_topLevelAS = TopLevelAS::MakeUnique();
-	XUSG_N_RETURN(pCommandList->PreBuildBLAS(m_bottomLevelAS.get(), 1, *pGeometry), false);
-	XUSG_N_RETURN(pCommandList->PreBuildTLAS(m_topLevelAS.get(), 1), false);
+	XUSG_N_RETURN(pCommandList->PrebuildBLAS(m_bottomLevelAS.get(), 1, *pGeometry), false);
+	XUSG_N_RETURN(pCommandList->PrebuildTLAS(m_topLevelAS.get(), 1), false);
 
 	// Allocate AS buffers
 	XUSG_N_RETURN(pCommandList->AllocateAccelerationStructure(m_bottomLevelAS.get()), false);
