@@ -48,10 +48,6 @@ bool Voxelizer::Init(RayTracing::CommandList* pCommandList, const XUSG::Descript
 	XUSG_N_RETURN(createVB(pCommandList, objLoader.GetNumVertices(), objLoader.GetVertexStride(), objLoader.GetVertices(), uploaders), false);
 	XUSG_N_RETURN(createIB(pCommandList, objLoader.GetNumIndices(), objLoader.GetIndices(), uploaders), false);
 
-	// Create raytracing pipelines
-	XUSG_N_RETURN(createPipelineLayouts(pDevice), false);
-	XUSG_N_RETURN(createPipelines(rtFormat, dsFormat), false);
-
 	// Extract boundary
 	const auto& aabb = objLoader.GetAABB();
 	const XMFLOAT3 ext(aabb.Max.x - aabb.Min.x, aabb.Max.y - aabb.Min.y, aabb.Max.z - aabb.Min.z);
@@ -72,10 +68,14 @@ bool Voxelizer::Init(RayTracing::CommandList* pCommandList, const XUSG::Descript
 
 	//m_depth = DepthStencil::MakeUnique();
 	//m_depth.Create(m_device, width, height, Format::D24_UNORM_S8_UINT, ResourceFlag::DENY_SHADER_RESOURCE);
-	XUSG_N_RETURN(buildAccelerationStructures(pCommandList, pGeometry), false);
-	XUSG_N_RETURN(buildShaderTables(pDevice), false);
 
-	return true;
+	// Build accelerationStructures and create raytracing pipelines
+	XUSG_N_RETURN(buildAccelerationStructures(pCommandList, pGeometry), false);
+	XUSG_N_RETURN(createPipelineLayouts(pDevice), false);
+	XUSG_N_RETURN(createPipelines(rtFormat, dsFormat), false);
+
+	// Build shader tables
+	return buildShaderTables(pDevice);
 }
 
 void Voxelizer::UpdateFrame(uint8_t frameIndex, CXMVECTOR eyePt, CXMMATRIX viewProj)
@@ -211,15 +211,6 @@ bool Voxelizer::createPipelines(Format rtFormat, Format dsFormat)
 
 bool Voxelizer::createDescriptorTables()
 {
-	// Acceleration structure UAVs
-	{
-		Descriptor descriptors[] = { m_bottomLevelAS->GetResource()->GetUAV(), m_topLevelAS->GetResource()->GetUAV() };
-		const auto descriptorTable = Util::DescriptorTable::MakeUnique();
-		descriptorTable->SetDescriptors(0, static_cast<uint32_t>(size(descriptors)), descriptors);
-		const auto asTable = descriptorTable->GetCbvSrvUavTable(m_descriptorTableLib.get());
-		XUSG_N_RETURN(asTable, false);
-	}
-
 	for (uint8_t i = 0; i < FrameCount; ++i)
 	{
 		// Output UAV
@@ -284,29 +275,37 @@ bool Voxelizer::buildAccelerationStructures(RayTracing::CommandList* pCommandLis
 	XUSG_N_RETURN(m_bottomLevelAS->Prebuild(pDevice, 1, *pGeometry), false);
 	XUSG_N_RETURN(m_topLevelAS->Prebuild(pDevice, 1), false);
 
-	// Allocate AS buffers
-	// Descriptor indices in the descriptor heap
-	const auto bottomLevelASIndex = 0u;
-	const auto topLevelASIndex = bottomLevelASIndex + 1;
-	XUSG_N_RETURN(m_bottomLevelAS->Allocate(pDevice, bottomLevelASIndex), false);
-	XUSG_N_RETURN(m_topLevelAS->Allocate(pDevice, topLevelASIndex), false);
+	// Calculate buffer size and offsets
+	uintptr_t dstBufferFirstElements[2] = {};
+	uintptr_t dstBufferOffsets[2] = {};
+	size_t dstBufferSize = m_topLevelAS->GetResultDataMaxByteSize();
+
+	dstBufferFirstElements[1] = dstBufferSize / sizeof(uint32_t);
+	dstBufferOffsets[1] = dstBufferSize;
+	dstBufferSize += m_bottomLevelAS->GetResultDataMaxByteSize();
+
+	// Create AS buffer storage
+	Buffer::sptr dstBuffer = Buffer::MakeShared();
+	XUSG_N_RETURN(AccelerationStructure::AllocateDestBuffer(pDevice, dstBuffer.get(),
+		dstBufferSize, 1, nullptr, static_cast<uint32_t>(size(dstBufferFirstElements)),
+		dstBufferFirstElements), false);
+
+	// Set dest buffer for top-level AS and bottom-level ASes
+	m_topLevelAS->SetDestination(pDevice, dstBuffer, 0, 0, 0, m_descriptorTableLib.get());
+	m_bottomLevelAS->SetDestination(pDevice, dstBuffer, dstBufferOffsets[1], 1, m_descriptorTableLib.get());
 
 	// Create scratch buffer
-	auto scratchSize = m_topLevelAS->GetScratchDataMaxSize();
-	scratchSize = (max)(m_bottomLevelAS->GetScratchDataMaxSize(), scratchSize);
-	m_scratch = Resource::MakeUnique();
+	auto scratchSize = m_topLevelAS->GetScratchDataByteSize();
+	scratchSize = (max)(m_bottomLevelAS->GetScratchDataByteSize(), scratchSize);
+	m_scratch = Buffer::MakeUnique();
 	XUSG_N_RETURN(AccelerationStructure::AllocateUAVBuffer(pDevice, m_scratch.get(), scratchSize), false);
-
-	// Get descriptor heap and create descriptor tables
-	XUSG_N_RETURN(createDescriptorTables(), false);
-	const auto& descriptorHeap = m_descriptorTableLib->GetDescriptorHeap(CBV_SRV_UAV_HEAP);
 
 	// Set instance
 	XMFLOAT3X4 matrix;
 	const auto normalizedToLocal = XMMatrixScaling(m_bound.w, m_bound.w, m_bound.w) * XMMatrixTranslation(m_bound.x, m_bound.y, m_bound.z);
 	XMStoreFloat3x4(&matrix, XMMatrixInverse(nullptr, normalizedToLocal));
 	const float* const pTransform[] = { reinterpret_cast<const float*>(&matrix) };
-	m_instances = Resource::MakeUnique();
+	m_instances = Buffer::MakeUnique();
 	const BottomLevelAS* ppBottomLevelAS[] = { m_bottomLevelAS.get() };
 	TopLevelAS::SetInstances(pDevice, m_instances.get(), 1, ppBottomLevelAS, pTransform);
 
@@ -316,8 +315,12 @@ bool Voxelizer::buildAccelerationStructures(RayTracing::CommandList* pCommandLis
 	const ResourceBarrier barrier = { nullptr, ResourceState::UNORDERED_ACCESS };
 	pCommandList->Barrier(1, &barrier);
 
+	// Create descriptor tables
+	XUSG_N_RETURN(createDescriptorTables(), false);
+
 	// Build top level AS
-	m_topLevelAS->Build(pCommandList, m_scratch.get(), m_instances.get(), descriptorHeap);
+	m_topLevelAS->Build(pCommandList, m_scratch.get(), m_instances.get(),
+		m_descriptorTableLib->GetDescriptorHeap(CBV_SRV_UAV_HEAP));
 
 	return true;
 }
@@ -329,18 +332,18 @@ bool Voxelizer::buildShaderTables(const RayTracing::Device* pDevice)
 
 	// Ray gen shader table
 	m_rayGenShaderTable = ShaderTable::MakeUnique();
-	XUSG_N_RETURN(m_rayGenShaderTable->Create(pDevice, 1, shaderIDSize, L"RayGenShaderTable"), false);
-	XUSG_N_RETURN(m_rayGenShaderTable->AddShaderRecord(ShaderRecord::MakeUnique(pDevice, m_pipelines[RAY_TRACING], RaygenShaderName).get()), false);
+	XUSG_N_RETURN(m_rayGenShaderTable->Create(pDevice, 1, shaderIDSize, MemoryFlag::NONE, L"RayGenShaderTable"), false);
+	m_rayGenShaderTable->AddShaderRecord(ShaderRecord::MakeUnique(pDevice, m_pipelines[RAY_TRACING], RaygenShaderName).get());
 
 	// Hit group shader table
 	m_hitGroupShaderTable = ShaderTable::MakeUnique();
-	XUSG_N_RETURN(m_hitGroupShaderTable->Create(pDevice, 1, shaderIDSize, L"HitGroupShaderTable"), false);
-	XUSG_N_RETURN(m_hitGroupShaderTable->AddShaderRecord(ShaderRecord::MakeUnique(pDevice, m_pipelines[RAY_TRACING], HitGroupName).get()), false);
+	XUSG_N_RETURN(m_hitGroupShaderTable->Create(pDevice, 1, shaderIDSize, MemoryFlag::NONE, L"HitGroupShaderTable"), false);
+	m_hitGroupShaderTable->AddShaderRecord(ShaderRecord::MakeUnique(pDevice, m_pipelines[RAY_TRACING], HitGroupName).get());
 
 	// Miss shader table
 	m_missShaderTable = ShaderTable::MakeUnique();
-	XUSG_N_RETURN(m_missShaderTable->Create(pDevice, 1, shaderIDSize, L"MissShaderTable"), false);
-	XUSG_N_RETURN(m_missShaderTable->AddShaderRecord(ShaderRecord::MakeUnique(pDevice, m_pipelines[RAY_TRACING], MissShaderName).get()), false);
+	XUSG_N_RETURN(m_missShaderTable->Create(pDevice, 1, shaderIDSize, MemoryFlag::NONE, L"MissShaderTable"), false);
+	m_missShaderTable->AddShaderRecord(ShaderRecord::MakeUnique(pDevice, m_pipelines[RAY_TRACING], MissShaderName).get());
 
 	return true;
 }
@@ -360,7 +363,8 @@ void Voxelizer::voxelize(RayTracing::CommandList* pCommandList, uint8_t frameInd
 	pCommandList->SetComputeDescriptorTable(VERTEX_BUFFERS, m_srvTables[SRV_TABLE_VB]);
 
 	// Fallback layer has no depth
-	pCommandList->DispatchRays(m_pipelines[RAY_TRACING], GRID_SIZE, GRID_SIZE * GRID_SIZE, 1,
+	pCommandList->SetRayTracingPipeline(m_pipelines[RAY_TRACING]);
+	pCommandList->DispatchRays(GRID_SIZE, GRID_SIZE * GRID_SIZE, 1,
 		m_rayGenShaderTable.get(), m_hitGroupShaderTable.get(), m_missShaderTable.get());
 }
 

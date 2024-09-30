@@ -151,13 +151,9 @@ void DXRVoxelizer::LoadAssets()
 	// Create ray tracing interfaces
 	XUSG_N_RETURN(m_commandList->CreateInterface(), ThrowIfFailed(E_FAIL));
 
-	// TODO: create m_commandListEZ.
-	AccelerationStructure::SetUAVCount(2);
-	const uint32_t maxSrvSpaces[Shader::Stage::NUM_STAGE] = { 1, 1, 0, 0, 0, 2 };
+	// Create m_commandListEZ.
 	m_commandListEZ = RayTracing::EZ::CommandList::MakeUnique();
-	XUSG_N_RETURN(m_commandListEZ->Create(m_commandList.get(), 1, 16, nullptr,
-		nullptr, nullptr, nullptr, nullptr, maxSrvSpaces, nullptr, 1, 2),
-		ThrowIfFailed(E_FAIL));
+	XUSG_N_RETURN(m_commandListEZ->Create(m_commandList.get(), 1, 16), ThrowIfFailed(E_FAIL));
 
 	vector<Resource::uptr> uploaders(0);
 	GeometryBuffer geometries[2];

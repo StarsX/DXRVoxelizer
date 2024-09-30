@@ -61,10 +61,14 @@ bool VoxelizerEZ::Init(RayTracing::EZ::CommandList* pCommandList, uint32_t width
 			ResourceFlag::ALLOW_UNORDERED_ACCESS), false);
 	}
 
+	// Build and create pipeline layouts for m_commandListEZ
+	const uint32_t maxSrvSpaces[Shader::Stage::NUM_STAGE] = { 1, 1, 0, 0, 0, 2 };
 	XUSG_N_RETURN(buildAccelerationStructures(pCommandList, pDevice, pGeometry), false);
-	XUSG_N_RETURN(createShaders(), false);
+	XUSG_N_RETURN(pCommandList->CreatePipelineLayouts(nullptr, nullptr,
+		nullptr, nullptr, nullptr, maxSrvSpaces, nullptr, 1, 2), false);
 
-	return true;
+	// Create shaders
+	return createShaders();
 }
 
 void VoxelizerEZ::UpdateFrame(uint8_t frameIndex, CXMVECTOR eyePt, CXMMATRIX viewProj)
@@ -165,16 +169,31 @@ bool VoxelizerEZ::buildAccelerationStructures(RayTracing::EZ::CommandList* pComm
 	XUSG_N_RETURN(pCommandList->PrebuildBLAS(m_bottomLevelAS.get(), 1, *pGeometry), false);
 	XUSG_N_RETURN(pCommandList->PrebuildTLAS(m_topLevelAS.get(), 1), false);
 
-	// Allocate AS buffers
-	XUSG_N_RETURN(pCommandList->AllocateAccelerationStructure(m_bottomLevelAS.get()), false);
-	XUSG_N_RETURN(pCommandList->AllocateAccelerationStructure(m_topLevelAS.get()), false);
+	// Calculate buffer size and offsets
+	uintptr_t dstBufferFirstElements[2] = {};
+	uintptr_t dstBufferOffsets[2] = {};
+	size_t dstBufferSize = m_topLevelAS->GetResultDataMaxByteSize();
+
+	dstBufferFirstElements[1] = dstBufferSize / sizeof(uint32_t);
+	dstBufferOffsets[1] = dstBufferSize;
+	dstBufferSize += m_bottomLevelAS->GetResultDataMaxByteSize();
+
+	// Create AS buffer storage
+	Buffer::sptr dstBuffer = Buffer::MakeShared();
+	XUSG_N_RETURN(AccelerationStructure::AllocateDestBuffer(pDevice, dstBuffer.get(),
+		dstBufferSize, 1, nullptr, static_cast<uint32_t>(size(dstBufferFirstElements)),
+		dstBufferFirstElements), false);
+
+	// Set dest buffer for top-level AS and bottom-level ASes
+	pCommandList->SetTLASDestination(m_topLevelAS.get(), dstBuffer, 0, 0, 0);
+	pCommandList->SetBLASDestination(m_bottomLevelAS.get(), dstBuffer, dstBufferOffsets[1], 1);
 
 	// Set instance
 	XMFLOAT3X4 matrix;
 	const auto normalizedToLocal = XMMatrixScaling(m_bound.w, m_bound.w, m_bound.w) * XMMatrixTranslation(m_bound.x, m_bound.y, m_bound.z);
 	XMStoreFloat3x4(&matrix, XMMatrixInverse(nullptr, normalizedToLocal));
 	const float* const pTransform[] = { reinterpret_cast<const float*>(&matrix) };
-	m_instances = Resource::MakeUnique();
+	m_instances = Buffer::MakeUnique();
 	const BottomLevelAS* const ppBottomLevelAS[] = { m_bottomLevelAS.get() };
 	TopLevelAS::SetInstances(pDevice, m_instances.get(), 1, &ppBottomLevelAS[0], &pTransform[0]);
 

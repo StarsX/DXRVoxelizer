@@ -109,8 +109,8 @@ protected:
 
 	XUSG::Texture3D::uptr		m_grids[FrameCount];
 
-	XUSG::Resource::uptr		m_scratch;
-	XUSG::Resource::uptr		m_instances;
+	XUSG::Buffer::uptr			m_scratch;
+	XUSG::Buffer::uptr			m_instances;
 
 	// Shader tables
 	static const wchar_t* HitGroupName;
