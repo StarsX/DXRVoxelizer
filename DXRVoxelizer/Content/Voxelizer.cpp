@@ -328,7 +328,7 @@ bool Voxelizer::buildAccelerationStructures(RayTracing::CommandList* pCommandLis
 bool Voxelizer::buildShaderTables(const RayTracing::Device* pDevice)
 {
 	// Get shader identifiers.
-	const auto shaderIDSize = ShaderRecord::GetShaderIDSize(pDevice);
+	const auto shaderIDSize = ShaderRecord::GetShaderIdentifierSize(pDevice);
 
 	// Ray gen shader table
 	m_rayGenShaderTable = ShaderTable::MakeUnique();
