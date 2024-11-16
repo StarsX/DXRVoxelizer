@@ -25,12 +25,12 @@ struct RayPayload
 //--------------------------------------------------------------------------------------
 // Texture and buffers
 //--------------------------------------------------------------------------------------
-RWTexture3D<float4>			RenderTarget	: register(u0);
-RaytracingAS				g_scene : register(t0, space2);
+RWTexture3D<float4>			RenderTarget	: register (u0);
+RaytracingAS				g_scene : register (t0, space2);
 
 // IA buffers
-Buffer<uint>				g_indexBuffers[]	: register(t0, space0);
-StructuredBuffer<Vertex>	g_vertexBuffers[]	: register(t0, space1);
+Buffer<uint>				g_indexBuffers[]	: register (t0, space0);
+StructuredBuffer<Vertex>	g_vertexBuffers[]	: register (t0, space1);
 
 //--------------------------------------------------------------------------------------
 // Samplers

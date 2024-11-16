@@ -65,7 +65,8 @@ bool VoxelizerEZ::Init(RayTracing::EZ::CommandList* pCommandList, uint32_t width
 	const uint32_t maxSrvSpaces[Shader::Stage::NUM_STAGE] = { 1, 1, 0, 0, 0, 2 };
 	XUSG_N_RETURN(buildAccelerationStructures(pCommandList, pDevice, pGeometry), false);
 	XUSG_N_RETURN(pCommandList->CreatePipelineLayouts(nullptr, nullptr,
-		nullptr, nullptr, nullptr, maxSrvSpaces, nullptr, 1, 2), false);
+		nullptr, nullptr, nullptr, maxSrvSpaces, nullptr,
+		nullptr, nullptr, nullptr, 1, 2), false);
 
 	// Create shaders
 	return createShaders();
