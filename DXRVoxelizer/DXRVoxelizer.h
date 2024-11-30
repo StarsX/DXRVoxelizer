@@ -45,13 +45,20 @@ public:
 	virtual void ParseCommandLineArgs(wchar_t* argv[], int argc);
 
 private:
+	enum DeviceType : uint8_t
+	{
+		DEVICE_DISCRETE,
+		DEVICE_UMA,
+		DEVICE_WARP
+	};
+
 	static const uint8_t FrameCount = Voxelizer::FrameCount;
 
 	// Pipeline objects.
 	XUSG::DescriptorTableLib::sptr m_descriptorTableLib;
 
-	XUSG::Viewport			m_viewport;
-	XUSG::RectRange			m_scissorRect;
+	XUSG::Viewport					m_viewport;
+	XUSG::RectRange					m_scissorRect;
 
 	XUSG::SwapChain::uptr			m_swapChain;
 	XUSG::CommandAllocator::uptr	m_commandAllocators[FrameCount];
@@ -80,10 +87,11 @@ private:
 	uint64_t	m_fenceValues[FrameCount];
 
 	// Application state
+	DeviceType	m_deviceType;
+	StepTimer	m_timer;
 	bool		m_useEZ;
 	bool		m_showFPS;
-	bool		m_pausing;
-	StepTimer	m_timer;
+	bool		m_isPaused;
 
 	// User camera interactions
 	bool m_tracking;
